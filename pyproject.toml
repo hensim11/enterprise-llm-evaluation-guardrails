@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llm-eval-guardrails"
+version = "0.1.0"
+description = "A reproducible framework for evaluating LLM applications and guardrail policies."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Hensimorina" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+  "ruff>=0.6,<1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llm_eval_guardrails"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
