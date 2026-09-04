@@ -60,7 +60,7 @@ Nothing. The repository is at a milestone boundary after M1.
   future loader can add version dispatch when a second schema is justified.
 - Python 3.11 baseline compatibility was not executed locally because Python 3.11 was
   unavailable. The inspected CI workflow is configured for Python 3.11, but it has not
-  run against these uncommitted changes.
+  run against the current M1 commit.
 - No empirical results exist, so the project cannot yet support claims about model quality or robustness.
 
 ## Recommended next objective
