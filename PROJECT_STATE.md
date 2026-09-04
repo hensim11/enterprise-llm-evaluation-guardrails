@@ -4,7 +4,7 @@ Last updated: 2026-09-04
 
 ## Current milestone
 
-M1 — Evaluation-case schema and dataset loading: **complete**.
+M2 — Provider-agnostic system interface and baseline runner: **in progress**.
 
 ## Implemented
 
@@ -29,23 +29,34 @@ M1 — Evaluation-case schema and dataset loading: **complete**.
   design, and invalid mutations are rejected when `to_mapping()` is called.
 - A valid example dataset, valid and invalid test fixtures, and comprehensive boundary
   tests, including loading the documented example through the public API.
+- A synchronous, provider-agnostic `SystemUnderTest` structural protocol with immutable,
+  typed request and response values and no runtime dependencies.
+- A deliberately simple deterministic echo test double that returns input text verbatim
+  and does not claim to simulate intelligence, domain correctness, or safety.
+- An explicit system-input boundary: only input text and ordered supplied context enter
+  the request; case identity and evaluation-only expectations remain outside it.
+- Documented failure semantics: system exceptions propagate for future per-case runner
+  handling, while an empty string remains a valid observable response.
 
 ## In progress
 
-Nothing. The repository is at a milestone boundary after M1.
+- M2 still requires a sequential baseline runner with per-case failure isolation and a
+  documented, versioned case-level run artefact containing case ID, output, status,
+  duration, configuration, and error details.
 
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Complete test suite: 90 tests collected and 90 passed.
+- Focused system-interface tests: 15 tests collected and 15 passed.
+- Complete test suite: 105 tests collected and 105 passed.
 - Ruff lint and format checks passed.
 - `git diff --check` passed.
 - No type checker is configured.
-- Python 3.11 baseline compatibility verified in GitHub Actions CI. Tests and Ruff checks passed successfully under Python 3.11.
+- Python 3.11 compatibility for this M2 increment has not yet been executed locally or
+  confirmed by CI; the workflow is configured to run the suite under Python 3.11.
 
 ## Not implemented
 
-- model/application provider interface;
 - evaluation runner or run artefacts;
 - deterministic or model-based evaluators;
 - prompt-injection or red-team dataset;
@@ -64,6 +75,6 @@ Nothing. The repository is at a milestone boundary after M1.
 
 ## Recommended next objective
 
-Implement the next narrow M2 increment: a minimal provider-agnostic system-under-test
-protocol plus a deterministic test double. Do not add vendor SDKs, evaluators, scoring,
-or guardrail enforcement.
+Implement the next narrow M2 increment: a sequential baseline runner with versioned
+case-level artefacts and per-case failure isolation. Do not add provider integrations,
+evaluators, scoring, retries, concurrency, reporting, or guardrail enforcement.

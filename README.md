@@ -7,9 +7,10 @@ This gives the evaluation work a realistic, risk-sensitive setting without imply
 access to real customer data, bank systems, or confidential policies. The framework's
 core contracts remain provider-agnostic.
 
-> **Current status:** Milestones M0 and M1 are complete. The repository provides a
-> versioned evaluation-case schema and strict local JSONL loader. It does not yet run
-> model evaluations, score outputs, or enforce guardrails.
+> **Current status:** Milestones M0 and M1 are complete, and M2 is in progress. The
+> repository provides a versioned evaluation-case schema, strict local JSONL loader,
+> and provider-agnostic system-under-test contract with a deterministic test double.
+> It does not yet run datasets, score outputs, or enforce guardrails.
 
 ## Why this project exists
 
@@ -86,6 +87,9 @@ No model provider credentials are required for the implemented milestones.
 - a typed, explicitly versioned evaluation-case representation;
 - a strict UTF-8 JSONL dataset loader with source-aware validation errors;
 - duplicate case-ID detection and deterministic input ordering;
+- a synchronous, provider-agnostic system-under-test protocol with typed requests and
+  responses;
+- a deterministic echo test double for exercising invocation plumbing;
 - representative fixtures and an illustrative example dataset;
 - a milestone roadmap with verification criteria;
 - test, lint, and continuous-integration configuration; and
@@ -157,9 +161,43 @@ non-standard numeric constants, invalid fields, unknown fields, and duplicate ID
 `DatasetError` with file, line, record, known case ID, and field context where
 applicable. The original parsing or validation error is retained as the cause.
 
+## System-under-test interface
+
+`SystemUnderTest` is a synchronous structural protocol: adapters implement
+`invoke(SystemRequest) -> SystemResponse` without inheriting from a project base class.
+`SystemRequest` contains only the input text and ordered supplied context. Case identity,
+references, assertions, expected behaviour, risk labels, tags, and metadata remain with
+the evaluation layer and are not system inputs. Requests follow the case schema's
+non-empty string conventions and preserve accepted strings and context order without
+trimming or coercion. `SystemResponse` contains the raw output text; an empty output
+string is valid and remains observable for future evaluation, while a non-string output
+is rejected.
+
+Implementations may raise ordinary exceptions. The interface does not turn exceptions
+into successful output or provide a fallback. The future runner will isolate and record
+failures per case.
+
+This example invokes the deterministic echo double using a loaded case:
+
+```python
+from llm_eval_guardrails import EchoSystemUnderTest, SystemRequest, load_dataset
+
+case = load_dataset("examples/evaluation_cases.jsonl")[0]
+request = SystemRequest(input=case.input, context=case.context)
+response = EchoSystemUnderTest().invoke(request)
+
+print(response.output)
+```
+
+The echo double returns the input verbatim and deliberately ignores context. Its output
+is only a plumbing demonstration: it is not evaluation evidence and does not simulate
+model intelligence, banking correctness, or safety.
+
 ## Limitations
 
-- No model provider or application adapter exists yet.
+- No real model provider or application adapter exists yet; only the deterministic echo
+  test double is implemented.
+- No baseline runner or versioned run artefact exists yet.
 - No evaluation, scoring, guardrail, reporting, or red-team runtime exists yet.
 - Assertion definitions are validated and stored but are not executed yet.
 - Schema v1 has no migration utility; future loaders can dispatch on the required

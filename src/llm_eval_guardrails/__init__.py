@@ -8,6 +8,12 @@ from llm_eval_guardrails.case_schema import (
 from llm_eval_guardrails.dataset import load_dataset
 from llm_eval_guardrails.errors import DatasetError, EvaluationCaseValidationError
 from llm_eval_guardrails.evaluation_case import EvaluationAssertion, EvaluationCase
+from llm_eval_guardrails.system_under_test import (
+    EchoSystemUnderTest,
+    SystemRequest,
+    SystemResponse,
+    SystemUnderTest,
+)
 
 __version__ = "0.1.0"
 
@@ -15,10 +21,14 @@ __all__ = [
     "AssertionType",
     "DatasetError",
     "EVALUATION_CASE_SCHEMA_VERSION",
+    "EchoSystemUnderTest",
     "EvaluationAssertion",
     "EvaluationCase",
     "EvaluationCaseValidationError",
     "RiskCategory",
+    "SystemRequest",
+    "SystemResponse",
+    "SystemUnderTest",
     "__version__",
     "load_dataset",
 ]

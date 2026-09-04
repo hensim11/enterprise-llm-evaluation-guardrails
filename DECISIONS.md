@@ -67,3 +67,21 @@ Only architectural or methodological decisions belong here. Implementation detai
   mutate case-owned metadata in place, so the case type must not be described as deeply
   immutable. Serialization revalidates the current mutable metadata while recursively
   copying it, so invalid mutations cannot escape through `to_mapping()`.
+
+## ADR-007 — Keep system inputs separate from evaluation expectations
+
+- **Date:** 2026-09-04
+- **Status:** accepted
+- **Decision:** The provider-agnostic system request contains only input text and ordered
+  supplied context. Case identity, references, assertions, expected behaviour, risk
+  labels, tags, and arbitrary metadata remain in the evaluation layer. Systems implement
+  a synchronous structural protocol and return raw output text; an empty string is a
+  valid output. Ordinary implementation exceptions propagate to the caller.
+- **Rationale:** A system should receive only the information it would be given during
+  execution. Supplying evaluation expectations would contaminate the observation and
+  couple adapters to the dataset schema. Structural typing keeps application and model
+  integrations independent of a concrete test double or vendor SDK.
+- **Consequences:** A runner must explicitly construct each request while retaining case
+  identity and expectations separately. It must also isolate and record per-case
+  exceptions without converting them to successful responses. Response validation can
+  distinguish an observed empty output from an invalid non-string adapter result.
