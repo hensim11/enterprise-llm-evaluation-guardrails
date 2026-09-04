@@ -4,6 +4,15 @@
 
 Build a defensible, explainable system for evaluating LLM applications and applying configurable guardrail policies. The project should demonstrate sound evaluation engineering and governance judgement rather than imitate a production platform.
 
+## Reference use case
+
+The initial system under test is a fictional bank's LLM-powered customer-support
+assistant. Evaluation cases may cover fictional products, fees, policies, supplied
+context, refusal boundaries, prompt injection, unsupported financial claims, and
+sensitive-information handling. The framework remains provider-agnostic and is not
+intended to model or imply access to any real bank's customers, systems, data, or
+confidential policies.
+
 ## Problem
 
 LLM applications can fail in ways that ordinary unit tests do not capture. Outputs may be plausible but unsupported, ignore instructions, leak sensitive context, follow malicious embedded instructions, refuse safe requests, or comply with unsafe ones. Teams need repeatable evidence about these behaviours before they can make sensible release or enforcement decisions.
@@ -78,4 +87,3 @@ These may be reconsidered only when the core evaluation system is sound and a co
 ## Definition of success
 
 The project succeeds when a reviewer can inspect a versioned suite, reproduce a run, trace metrics to evidence, understand evaluator limitations, and explain why a policy decision was produced. The project owner should be able to defend the architecture, methodology, trade-offs, tests, and remaining risks.
-

@@ -2,6 +2,11 @@
 
 A portfolio and learning project for measuring the behaviour of LLM applications and, later, enforcing explicit risk policies around them. The project is designed for settings where reliability, traceability, privacy, safety, and groundedness matter.
 
+The reference system is a fictional bank's LLM-powered customer-support assistant.
+This gives the evaluation work a realistic, risk-sensitive setting without implying
+access to real customer data, bank systems, or confidential policies. The framework's
+core contracts remain provider-agnostic.
+
 > **Current status:** Milestones M0 and M1 are complete. The repository provides a
 > versioned evaluation-case schema and strict local JSONL loader. It does not yet run
 > model evaluations, score outputs, or enforce guardrails.
