@@ -221,17 +221,25 @@ def test_non_object_json_record_is_rejected_with_root_field(
     assert str(caught.value) == (f"{path}: line 1, record 1: field '$': must be a JSON object")
 
 
-def test_non_standard_json_number_is_rejected(tmp_path: Path) -> None:
-    path = tmp_path / "nan.jsonl"
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_non_standard_json_number_is_rejected(tmp_path: Path, constant: str) -> None:
+    path = tmp_path / "non-finite.jsonl"
     path.write_text(
-        '{"schema_version":"1","id":"case","input":"text","metadata":{"x":NaN}}\n',
+        '{"schema_version":"1","id":"case","input":"text","metadata":{"x":' + constant + "}}\n",
         encoding="utf-8",
     )
 
     with pytest.raises(DatasetError) as caught:
         load_dataset(path)
 
-    assert "malformed JSON: non-standard numeric constant 'NaN' is not allowed" in str(caught.value)
+    assert caught.value.line_number == 1
+    assert caught.value.record_number == 1
+    assert caught.value.case_id is None
+    assert caught.value.field is None
+    assert caught.value.reason == (
+        f"malformed JSON: non-standard numeric constant {constant!r} is not allowed"
+    )
+    assert isinstance(caught.value.__cause__, ValueError)
 
 
 def test_duplicate_json_object_key_is_rejected_instead_of_overwritten(tmp_path: Path) -> None:

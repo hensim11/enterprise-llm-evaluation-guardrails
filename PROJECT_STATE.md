@@ -17,15 +17,16 @@ M1 — Evaluation-case schema and dataset loading: **complete**.
 - Evaluation-case schema version `"1"` with typed case and assertion objects.
 - Strict validation for required and optional fields, supported values, unknown fields,
   non-null present fields, unique tags, unique assertion criteria, and JSON-compatible
-  metadata. Validation applies through both mapping factories and exported typed
-  constructors.
+  metadata with finite numeric values. Validation applies recursively through both
+  mapping factories and exported typed constructors.
 - UTF-8 JSONL loading that preserves source order and ignores blank lines.
 - Actionable dataset errors with file, physical line, record, known case ID, and field
   context.
 - Rejection of empty datasets, malformed JSON, unsupported versions, invalid records,
   duplicate JSON object keys, and duplicate case identifiers.
-- Shallowly frozen case attributes with recursive defensive copies at metadata input
-  and serialization boundaries; case-owned metadata remains mutable by design.
+- Shallowly frozen case attributes with validation and recursive defensive copies at
+  metadata input and serialization boundaries. Case-owned metadata remains mutable by
+  design, and invalid mutations are rejected when `to_mapping()` is called.
 - A valid example dataset, valid and invalid test fixtures, and comprehensive boundary
   tests, including loading the documented example through the public API.
 
@@ -36,7 +37,7 @@ Nothing. The repository is at a milestone boundary after M1.
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Complete test suite: 79 tests collected and 79 passed.
+- Complete test suite: 90 tests collected and 90 passed.
 - Ruff lint and format checks passed.
 - `git diff --check` passed.
 - No type checker is configured.

@@ -107,8 +107,9 @@ These fields are optional:
 - `expected_behavior`: a non-empty human-readable description;
 - `assertions`: an array of named assertions with unique `criterion` values, a `type`
   of `exact_match`, `contains`, or `not_contains`, and a non-empty string `value`; and
-- `metadata`: an object containing JSON-compatible values. Metadata is the only
-  open-ended extension area in v1.
+- `metadata`: an object containing JSON-compatible values. Numeric values must be
+  finite; `NaN`, positive infinity, and negative infinity are rejected recursively.
+  Metadata is the only open-ended extension area in v1.
 
 Unknown case and assertion fields are rejected. Missing optional arrays behave as
 empty arrays; missing scalar options behave as absent values. An optional field that is
@@ -118,10 +119,13 @@ coerce them. The exported `EvaluationCase` and `EvaluationAssertion` constructor
 enforce their typed domain contracts.
 
 `EvaluationCase` is shallowly frozen: its attributes cannot be rebound, and its
-sequence fields are tuples. Metadata is recursively copied during construction so it
-does not alias caller-owned input, but the case-owned metadata dictionary and nested
-dictionaries or lists remain mutable. `to_mapping()` returns another recursive copy,
-so mutation of serialized output does not alter the case.
+sequence fields are tuples. Metadata is validated and recursively copied during
+construction so it does not alias caller-owned input, but the case-owned metadata
+dictionary and nested dictionaries or lists remain mutable. `to_mapping()` validates
+the metadata's current state and returns another recursive copy, so invalid mutations
+are detected at serialization time and mutation of serialized output does not alter
+the case. Every mapping successfully returned by `to_mapping()` contains only
+standards-compliant JSON values.
 
 Example input:
 
@@ -144,9 +148,9 @@ The loader reads UTF-8, preserves record order, and validates the complete file 
 returning. Blank and whitespace-only lines are ignored and do not count as records;
 physical line numbers are retained in errors. Empty and blank-only files, malformed
 JSON, duplicate JSON object keys, non-object records, unsupported or missing versions,
-invalid fields, unknown fields, and duplicate IDs raise `DatasetError` with file, line,
-record, known case ID, and field context where applicable. The original parsing or
-validation error is retained as the cause.
+non-standard numeric constants, invalid fields, unknown fields, and duplicate IDs raise
+`DatasetError` with file, line, record, known case ID, and field context where
+applicable. The original parsing or validation error is retained as the cause.
 
 ## Limitations
 

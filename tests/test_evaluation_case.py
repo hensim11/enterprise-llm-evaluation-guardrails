@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from dataclasses import FrozenInstanceError
 
@@ -327,6 +328,55 @@ def test_metadata_preserves_boolean_and_integer_json_types() -> None:
     assert type(case.metadata["integer"]) is int
 
 
+def test_valid_case_mapping_supports_strict_json_serialization() -> None:
+    case = EvaluationCase.from_mapping(
+        {
+            **minimal_case(),
+            "metadata": {
+                "string": "value",
+                "integer": 1,
+                "float": 1.25,
+                "boolean": True,
+                "null": None,
+                "nested": [{"value": -2.5}],
+            },
+        }
+    )
+
+    serialized = json.dumps(case.to_mapping(), allow_nan=False)
+
+    assert json.loads(serialized)["metadata"]["float"] == 1.25
+
+
+@pytest.mark.parametrize("invalid_value", [float("nan"), float("inf"), float("-inf")])
+def test_to_mapping_rejects_non_finite_metadata_added_after_construction(
+    invalid_value: float,
+) -> None:
+    case = EvaluationCase.from_mapping(
+        {**minimal_case(), "metadata": {"nested": {"values": [1.0]}}}
+    )
+    case.metadata["nested"]["values"].append(invalid_value)  # type: ignore[index, union-attr]
+
+    with pytest.raises(EvaluationCaseValidationError) as caught:
+        case.to_mapping()
+
+    assert caught.value.field == "metadata.nested.values[1]"
+    assert caught.value.reason == "must be a finite JSON number"
+
+
+def test_to_mapping_accepts_valid_metadata_mutation_and_returns_recursive_copy() -> None:
+    case = EvaluationCase.from_mapping(
+        {**minimal_case(), "metadata": {"nested": {"values": [1.0]}}}
+    )
+    case.metadata["nested"]["values"].append(2.5)  # type: ignore[index, union-attr]
+
+    mapping = case.to_mapping()
+    json.dumps(mapping, allow_nan=False)
+    mapping["metadata"]["nested"]["values"].append(3.0)  # type: ignore[index, union-attr]
+
+    assert case.metadata == {"nested": {"values": [1.0, 2.5]}}
+
+
 def test_metadata_accepts_empty_json_object_keys_consistently() -> None:
     raw_case = {
         **minimal_case(),
@@ -338,12 +388,42 @@ def test_metadata_accepts_empty_json_object_keys_consistently() -> None:
     assert case.to_mapping() == raw_case
 
 
-@pytest.mark.parametrize("invalid_value", [float("nan"), float("inf"), ("not", "json")])
-def test_metadata_must_contain_json_values(invalid_value: object) -> None:
-    raw_case = minimal_case()
-    raw_case["metadata"] = {"invalid": invalid_value}
+@pytest.mark.parametrize("invalid_value", [float("nan"), float("inf"), float("-inf")])
+def test_direct_construction_rejects_top_level_non_finite_metadata(
+    invalid_value: float,
+) -> None:
+    with pytest.raises(EvaluationCaseValidationError) as caught:
+        EvaluationCase(id="case", input="text", metadata={"invalid": invalid_value})
+
+    assert caught.value.field == "metadata.invalid"
+    assert caught.value.reason == "must be a finite JSON number"
+
+
+@pytest.mark.parametrize(
+    ("metadata", "expected_field"),
+    [
+        ({"nested": {"value": float("nan")}}, "metadata.nested.value"),
+        ({"nested": {"items": [float("inf")]}}, "metadata.nested.items[0]"),
+        ({"items": [{"value": float("-inf")}]}, "metadata.items[0].value"),
+    ],
+)
+def test_mapping_validation_rejects_nested_non_finite_metadata(
+    metadata: dict[str, object], expected_field: str
+) -> None:
+    raw_case = {**minimal_case(), "metadata": metadata}
+
+    with pytest.raises(EvaluationCaseValidationError) as caught:
+        EvaluationCase.from_mapping(raw_case)
+
+    assert caught.value.field == expected_field
+    assert caught.value.reason == "must be a finite JSON number"
+
+
+def test_metadata_rejects_non_json_python_value() -> None:
+    raw_case = {**minimal_case(), "metadata": {"invalid": ("not", "json")}}
 
     with pytest.raises(EvaluationCaseValidationError) as caught:
         EvaluationCase.from_mapping(raw_case)
 
     assert caught.value.field == "metadata.invalid"
+    assert caught.value.reason == "must be a JSON value"

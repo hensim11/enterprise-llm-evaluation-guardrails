@@ -65,4 +65,5 @@ Only architectural or methodological decisions belong here. Implementation detai
   decision. Blank lines can be used for readability and do not affect record numbering;
   errors report both physical line and applicable-record positions. Consumers may
   mutate case-owned metadata in place, so the case type must not be described as deeply
-  immutable.
+  immutable. Serialization revalidates the current mutable metadata while recursively
+  copying it, so invalid mutations cannot escape through `to_mapping()`.

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TypeAlias
 
@@ -171,7 +170,7 @@ class EvaluationCase:
         if self.assertions:
             result["assertions"] = [assertion.to_mapping() for assertion in self.assertions]
         if self.metadata:
-            result["metadata"] = deepcopy(dict(self.metadata))
+            result["metadata"] = _parse_metadata(self.metadata)
         return result
 
 
