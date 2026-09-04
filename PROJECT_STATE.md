@@ -41,6 +41,7 @@ Nothing. The repository is at a milestone boundary after M1.
 - Ruff lint and format checks passed.
 - `git diff --check` passed.
 - No type checker is configured.
+- Python 3.11 baseline compatibility verified in GitHub Actions CI. Tests and Ruff checks passed successfully under Python 3.11.
 
 ## Not implemented
 
@@ -59,9 +60,6 @@ Nothing. The repository is at a milestone boundary after M1.
   execution semantics remain M3 work.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
-- Python 3.11 baseline compatibility was not executed locally because Python 3.11 was
-  unavailable. The inspected CI workflow is configured for Python 3.11, but it has not
-  run against the current M1 commit.
 - No empirical results exist, so the project cannot yet support claims about model quality or robustness.
 
 ## Recommended next objective
