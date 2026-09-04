@@ -42,3 +42,27 @@ Only architectural or methodological decisions belong here. Implementation detai
 - **Rationale:** The project is intended to demonstrate engineering and governance judgement. Inflated status claims undermine both.
 - **Consequences:** Early README sections may describe substantial target capability while prominently stating that runtime features are not yet implemented.
 
+## ADR-006 — Keep evaluation-case schema v1 strict and dependency-free
+
+- **Date:** 2026-09-03
+- **Status:** accepted
+- **Decision:** Version every serialized case with the exact string `"1"`. Validate it
+  with small typed Python domain objects and explicit project code rather than adding a
+  schema library. Reject unknown top-level and assertion fields, while permitting
+  JSON-compatible values inside the explicit `metadata` object. Ignore blank JSONL
+  lines but reject files with no applicable records. Keep case attributes shallowly
+  frozen and defensively copy metadata at input and serialization boundaries; do not
+  introduce a custom recursively immutable JSON representation at M1.
+- **Rationale:** The first schema is small enough for direct validation, and the project
+  has no runtime dependencies. Strict fields and no coercion expose misspellings and
+  incompatible data early. A metadata boundary permits provenance without weakening
+  the behavioural contract. Per-record versioning allows a future loader to dispatch
+  versions without building migration machinery before a second version exists.
+  Shallow freezing preserves ordinary JSON dictionaries and lists for downstream code
+  while defensive copying prevents accidental mutation of caller-owned data.
+- **Consequences:** Authors receive deterministic field-level errors and datasets remain
+  reproducible, but additions to the behavioural contract require a schema-version
+  decision. Blank lines can be used for readability and do not affect record numbering;
+  errors report both physical line and applicable-record positions. Consumers may
+  mutate case-owned metadata in place, so the case type must not be described as deeply
+  immutable.

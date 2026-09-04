@@ -1,0 +1,2 @@
+{"schema_version":"1","id":"minimal","input":"Provide a short greeting."}
+{"schema_version":"1","id":"grounded-answer","input":"When are refunds available?","context":["Refunds are available within 30 days."],"references":["Refunds are available within 30 days."],"tags":["grounded","support"],"risk_category":"groundedness","expected_behavior":"Use the supplied policy.","assertions":[{"criterion":"refund-window","type":"contains","value":"30 days"}],"metadata":{"source":"test fixture"}}

@@ -21,9 +21,13 @@ Verification:
 - lint configuration is valid;
 - planned features are labelled as planned.
 
-## M1 — Evaluation-case schema and dataset loading — not started
+## M1 — Evaluation-case schema and dataset loading — complete
 
 Create a typed, versioned case format and reliable local loader.
+
+Delivered in schema version `"1"` with strict UTF-8 JSONL loading, validated typed
+cases, source-aware errors, duplicate-ID detection, defensive metadata copying,
+fixtures, tests, and authoring guidance.
 
 Expected completion criteria:
 
@@ -116,4 +120,3 @@ Expected completion criteria:
 ## M9+ — Advanced capabilities — deferred
 
 Consider only with evidence of need: additional modalities, hosted execution, production telemetry, richer policy languages, or distributed runs.
-
