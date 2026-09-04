@@ -67,3 +67,44 @@ Only architectural or methodological decisions belong here. Implementation detai
   mutate case-owned metadata in place, so the case type must not be described as deeply
   immutable. Serialization revalidates the current mutable metadata while recursively
   copying it, so invalid mutations cannot escape through `to_mapping()`.
+
+## ADR-007 — Keep system inputs separate from evaluation expectations
+
+- **Date:** 2026-09-04
+- **Status:** accepted
+- **Decision:** The provider-agnostic system request contains only input text and ordered
+  supplied context. Case identity, references, assertions, expected behaviour, risk
+  labels, tags, and arbitrary metadata remain in the evaluation layer. Systems implement
+  a synchronous structural protocol and return raw output text; an empty string is a
+  valid output. Ordinary implementation exceptions propagate to the caller.
+- **Rationale:** A system should receive only the information it would be given during
+  execution. Supplying evaluation expectations would contaminate the observation and
+  couple adapters to the dataset schema. Structural typing keeps application and model
+  integrations independent of a concrete test double or vendor SDK.
+- **Consequences:** A runner must explicitly construct each request while retaining case
+  identity and expectations separately. It must also isolate and record per-case
+  exceptions without converting them to successful responses. Response validation can
+  distinguish an observed empty output from an invalid non-string adapter result.
+
+## ADR-008 — Preserve raw runs as validated case snapshots plus execution evidence
+
+- **Date:** 2026-09-04
+- **Status:** accepted
+- **Decision:** Store each completed baseline run as one versioned UTF-8 JSON object with
+  run and system identity, an explicit non-secret configuration allowlist, the complete
+  ordered validated case snapshot and its canonical SHA-256 fingerprint, and exactly one
+  ordered raw execution result per case. Use only `success` and `error` execution states;
+  do not add evaluation outcomes. Catch ordinary per-case exceptions while allowing
+  `BaseException` subclasses to propagate.
+- **Rationale:** The snapshot keeps case specifications reconstructable without exposing
+  evaluation-only fields to the system. A fingerprint makes changes detectable without
+  treating a source path as content identity. Explicit null output on error distinguishes
+  failure from a valid empty response. An allowlist avoids introspecting adapters and
+  accidentally serializing credentials.
+- **Consequences:** Artefacts are intentionally verbose and may contain sensitive cases,
+  outputs, or error messages, so they require appropriate handling and must not be
+  committed by default. Fingerprints detect snapshot changes but do not prove source
+  authenticity or guarantee repeatable model responses. Because retained case metadata
+  is mutable and fingerprints are calculated on demand, the fingerprint validates the
+  current stored snapshot rather than establishing immutable execution-time identity.
+  Sequential execution is simple and traceable but does not optimize throughput.

@@ -17,6 +17,7 @@ def test_core_project_documents_exist() -> None:
         "PROJECT_STATE.md",
         "DECISIONS.md",
         "docs/EVALUATION_SPEC.md",
+        "docs/RUN_ARTIFACT_SPEC.md",
     }
 
     missing = [path for path in expected_documents if not (ROOT / path).is_file()]

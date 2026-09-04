@@ -4,7 +4,7 @@ Last updated: 2026-09-04
 
 ## Current milestone
 
-M1 — Evaluation-case schema and dataset loading: **complete**.
+M2 — Provider-agnostic system interface and baseline runner: **complete**.
 
 ## Implemented
 
@@ -29,24 +29,52 @@ M1 — Evaluation-case schema and dataset loading: **complete**.
   design, and invalid mutations are rejected when `to_mapping()` is called.
 - A valid example dataset, valid and invalid test fixtures, and comprehensive boundary
   tests, including loading the documented example through the public API.
+- A synchronous, provider-agnostic `SystemUnderTest` structural protocol with immutable,
+  typed request and response values and no runtime dependencies.
+- A deliberately simple deterministic echo test double that returns input text verbatim
+  and does not claim to simulate intelligence, domain correctness, or safety.
+- An explicit system-input boundary: only input text and ordered supplied context enter
+  the request; case identity and evaluation-only expectations remain outside it.
+- Documented failure semantics: the baseline runner isolates ordinary per-case system
+  exceptions, while an empty string remains a valid observable response.
+- A sequential baseline runner that loads and snapshots the complete validated dataset,
+  sends only input and ordered context to the system, and records exactly one ordered
+  execution result per case in a normally completed run.
+- Per-case isolation for ordinary system exceptions and response-contract violations,
+  with continued execution, monotonic durations in seconds, structured error details,
+  and explicit null output on error. Interrupt and termination signals still propagate.
+- Versioned run artefact schema `"1"` with run and system identity, an explicit
+  non-secret system-configuration allowlist, dataset source, complete ordered case
+  snapshot, canonical SHA-256 fingerprint, and validated round-trip JSON I/O.
+- Artefact provenance rejects duplicate case IDs during direct construction and loading,
+  preserving unambiguous case-to-result joins.
+- Response output access and string validation occur inside the per-case exception
+  boundary, so malformed response subclasses cannot prevent later cases from running.
+- A local CLI using the deterministic echo double for synthetic plumbing demonstrations
+  without network access or provider credentials.
+- Documentation for runner invocation, data flow, execution/error semantics, artefact
+  fields, fingerprint construction, confidentiality, and reproducibility limitations.
 
 ## In progress
 
-Nothing. The repository is at a milestone boundary after M1.
+Nothing. The repository is at a milestone boundary after M2.
 
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Complete test suite: 90 tests collected and 90 passed.
+- Focused runner regression and artefact-validation tests: 24 tests collected and 24
+  passed.
+- Complete test suite: 130 tests collected and 130 passed.
 - Ruff lint and format checks passed.
 - `git diff --check` passed.
+- The documented synthetic echo CLI demonstration completed with two ordered results;
+  its generated artefact was inspected and loaded through the public artefact reader.
 - No type checker is configured.
-- Python 3.11 baseline compatibility verified in GitHub Actions CI. Tests and Ruff checks passed successfully under Python 3.11.
+- Python 3.11 compatibility for the completed M2 code has not yet been executed locally or
+  confirmed by CI; the workflow is configured to run the suite under Python 3.11.
 
 ## Not implemented
 
-- model/application provider interface;
-- evaluation runner or run artefacts;
 - deterministic or model-based evaluators;
 - prompt-injection or red-team dataset;
 - guardrail enforcement;
@@ -61,9 +89,17 @@ Nothing. The repository is at a milestone boundary after M1.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
 - No empirical results exist, so the project cannot yet support claims about model quality or robustness.
+- Run artefacts intentionally retain complete case specifications, outputs, and error
+  messages and may therefore require sensitive-data handling. Configuration safety is
+  caller-controlled; there is no automatic secret detection or redaction.
+- Dataset fingerprints validate the current stored case snapshot and detect changes, but
+  mutable retained metadata and on-demand calculation mean they are not immutable
+  execution-time identities. They also do not prove source authenticity or make
+  nondeterministic system responses reproducible.
 
 ## Recommended next objective
 
-Implement the next narrow M2 increment: a minimal provider-agnostic system-under-test
-protocol plus a deterministic test double. Do not add vendor SDKs, evaluators, scoring,
-or guardrail enforcement.
+Implement the first narrow M3 increment: deterministic evaluator result contracts and
+execution for the existing exact-match, contains, and not-contains assertions against
+stored raw run records. Keep evaluator evidence separate from execution status and do
+not add guardrail enforcement yet.

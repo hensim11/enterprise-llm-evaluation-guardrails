@@ -7,9 +7,10 @@ This gives the evaluation work a realistic, risk-sensitive setting without imply
 access to real customer data, bank systems, or confidential policies. The framework's
 core contracts remain provider-agnostic.
 
-> **Current status:** Milestones M0 and M1 are complete. The repository provides a
-> versioned evaluation-case schema and strict local JSONL loader. It does not yet run
-> model evaluations, score outputs, or enforce guardrails.
+> **Current status:** Milestones M0, M1, and M2 are complete. The repository provides a
+> versioned evaluation-case schema, strict local JSONL loader, provider-agnostic
+> system-under-test contract, sequential baseline runner, and versioned raw run
+> artefacts. It does not yet evaluate or score outputs or enforce guardrails.
 
 ## Why this project exists
 
@@ -86,12 +87,21 @@ No model provider credentials are required for the implemented milestones.
 - a typed, explicitly versioned evaluation-case representation;
 - a strict UTF-8 JSONL dataset loader with source-aware validation errors;
 - duplicate case-ID detection and deterministic input ordering;
+- a synchronous, provider-agnostic system-under-test protocol with typed requests and
+  responses;
+- a deterministic echo test double for exercising invocation plumbing;
+- a sequential runner with per-case exception isolation and monotonic durations;
+- validated versioned JSON run artefacts with ordered case snapshots and SHA-256
+  fingerprints;
+- a local synthetic echo-run command requiring no provider credentials;
 - representative fixtures and an illustrative example dataset;
 - a milestone roadmap with verification criteria;
 - test, lint, and continuous-integration configuration; and
 - an explicit record of architectural decisions.
 
-Everything else in this README is a target, not a claim of completed capability.
+Sections that describe the case schema, system interface, baseline runner, and run
+artefacts document implemented capability. Features explicitly described as planned or
+listed under limitations remain targets rather than claims of completed capability.
 
 ## Evaluation-case schema v1
 
@@ -99,7 +109,7 @@ Each applicable JSONL line must contain one JSON object. The object must include
 
 - `schema_version`: exactly the string `"1"`;
 - `id`: a non-empty case identifier, unique within the file; and
-- `input`: the non-empty text supplied to the future system under test.
+- `input`: the non-empty text supplied to the system under test.
 
 These fields are optional:
 
@@ -157,10 +167,104 @@ non-standard numeric constants, invalid fields, unknown fields, and duplicate ID
 `DatasetError` with file, line, record, known case ID, and field context where
 applicable. The original parsing or validation error is retained as the cause.
 
+## System-under-test interface
+
+`SystemUnderTest` is a synchronous structural protocol: adapters implement
+`invoke(SystemRequest) -> SystemResponse` without inheriting from a project base class.
+`SystemRequest` contains only the input text and ordered supplied context. Case identity,
+references, assertions, expected behaviour, risk labels, tags, and metadata remain with
+the evaluation layer and are not system inputs. Requests follow the case schema's
+non-empty string conventions and preserve accepted strings and context order without
+trimming or coercion. `SystemResponse` contains the raw output text; an empty output
+string is valid and remains observable for future evaluation, while a non-string output
+is rejected.
+
+Implementations may raise ordinary exceptions. The interface does not turn exceptions
+into successful output or provide a fallback. The baseline runner isolates and records
+ordinary failures per case.
+
+This example invokes the deterministic echo double using a loaded case:
+
+```python
+from llm_eval_guardrails import EchoSystemUnderTest, SystemRequest, load_dataset
+
+case = load_dataset("examples/evaluation_cases.jsonl")[0]
+request = SystemRequest(input=case.input, context=case.context)
+response = EchoSystemUnderTest().invoke(request)
+
+print(response.output)
+```
+
+The echo double returns the input verbatim and deliberately ignores context. Its output
+is only a plumbing demonstration: it is not evaluation evidence and does not simulate
+model intelligence, banking correctness, or safety.
+
+## Sequential baseline runner
+
+`run_dataset()` validates the complete dataset before invoking the system. It then
+constructs one `SystemRequest` per case, in source order, using only `case.input` and
+`case.context`. The complete validated case remains separately available in dataset
+provenance. Each invocation produces exactly one `CaseExecutionResult` in a normally
+completed run.
+
+Execution status is deliberately not an evaluation outcome. `success` means the system
+returned a valid `SystemResponse`, including a valid empty output string. Ordinary
+exceptions and invalid response objects become `error` results with `output=None`, and
+execution continues. Interrupts propagate, as do dataset and artefact-writing failures.
+
+Python API:
+
+```python
+from llm_eval_guardrails import (
+    EchoSystemUnderTest,
+    run_dataset,
+    write_run_artifact,
+)
+
+artifact = run_dataset(
+    "examples/evaluation_cases.jsonl",
+    EchoSystemUnderTest(),
+    system_id="echo",
+    system_configuration={
+        "behavior": "input_verbatim",
+        "context_usage": "ignored",
+    },
+)
+write_run_artifact(artifact, "/tmp/synthetic-echo-run.json")
+```
+
+The configuration argument is an explicit allowlist of effective, non-secret settings.
+The runner never introspects the adapter, which prevents credentials stored on it from
+being serialized. There is no automatic secret detection or redaction; callers are
+responsible for keeping credentials and other secrets out of the allowlist.
+
+Run the same synthetic plumbing demonstration locally with:
+
+```bash
+python -m llm_eval_guardrails run-echo \
+  examples/evaluation_cases.jsonl \
+  /tmp/synthetic-echo-run.json \
+  --run-id synthetic-echo-demo
+```
+
+The output path must not already exist. This command records synthetic echo behavior;
+it is not a model evaluation or evidence of quality, banking correctness, or safety.
+See [the run artefact specification](docs/RUN_ARTIFACT_SPEC.md) for the versioned JSON
+contract, fingerprint algorithm, timing units, error semantics, and limitations.
+
 ## Limitations
 
-- No model provider or application adapter exists yet.
+- No real model provider or application adapter exists yet; only the deterministic echo
+  test double is implemented.
 - No evaluation, scoring, guardrail, reporting, or red-team runtime exists yet.
+- The runner is sequential and has no retries, resume support, or concurrency.
+- Run provenance supports case reconstruction and change detection but does not guarantee
+  repeatable responses from nondeterministic systems.
+- A fingerprint validates the case snapshot in its current stored state. Case metadata
+  remains mutable and fingerprints are calculated on demand, so it is not an immutable
+  identity of the snapshot at execution time.
+- Complete case snapshots, raw outputs, and exception messages may contain sensitive
+  information. The runner performs no automatic redaction.
 - Assertion definitions are validated and stored but are not executed yet.
 - Schema v1 has no migration utility; future loaders can dispatch on the required
   `schema_version` without changing v1 data.

@@ -1,12 +1,15 @@
 # Initial Evaluation Specification
 
-This document defines the M0 measurement contract. It guides later implementation; it is not evidence that an evaluator exists.
+This document defines the M0 measurement contract. The case-specification and raw
+execution layers now have M1 and M2 implementations; the evaluation-result layer remains
+planned. This document is not evidence that an evaluator exists.
 
 ## Unit of evaluation
 
 An **evaluation case** is the smallest versioned test specification. It will identify an input, relevant context, risk metadata, and zero or more expectations. A **run** applies a fixed system and configuration to a versioned dataset and records one result per case.
 
-The future implementation should preserve three layers:
+The architecture preserves three layers; M1 and M2 implement the first two, while the
+third remains planned:
 
 1. **Case specification:** what behaviour is being tested.
 2. **Raw execution:** what the system produced under a recorded configuration.
@@ -96,4 +99,3 @@ Before relying on a model-based metric, compare it with a small human-labelled s
 - How should sensitive evidence be redacted while retaining reproducibility?
 - Which agreement and variance measures are proportionate for the first judge calibration?
 - When is a composite score useful, and which critical failures must override it?
-
