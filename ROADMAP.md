@@ -38,7 +38,7 @@ Expected completion criteria:
 - unit tests cover parsing and validation boundaries;
 - documentation includes a minimal authoring example.
 
-## M2 — Provider-agnostic system interface and baseline runner — in progress
+## M2 — Provider-agnostic system interface and baseline runner — complete
 
 Run a dataset against a deterministic test double and record reproducible case-level results.
 

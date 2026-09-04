@@ -85,3 +85,26 @@ Only architectural or methodological decisions belong here. Implementation detai
   identity and expectations separately. It must also isolate and record per-case
   exceptions without converting them to successful responses. Response validation can
   distinguish an observed empty output from an invalid non-string adapter result.
+
+## ADR-008 — Preserve raw runs as validated case snapshots plus execution evidence
+
+- **Date:** 2026-09-04
+- **Status:** accepted
+- **Decision:** Store each completed baseline run as one versioned UTF-8 JSON object with
+  run and system identity, an explicit non-secret configuration allowlist, the complete
+  ordered validated case snapshot and its canonical SHA-256 fingerprint, and exactly one
+  ordered raw execution result per case. Use only `success` and `error` execution states;
+  do not add evaluation outcomes. Catch ordinary per-case exceptions while allowing
+  `BaseException` subclasses to propagate.
+- **Rationale:** The snapshot keeps case specifications reconstructable without exposing
+  evaluation-only fields to the system. A fingerprint makes changes detectable without
+  treating a source path as content identity. Explicit null output on error distinguishes
+  failure from a valid empty response. An allowlist avoids introspecting adapters and
+  accidentally serializing credentials.
+- **Consequences:** Artefacts are intentionally verbose and may contain sensitive cases,
+  outputs, or error messages, so they require appropriate handling and must not be
+  committed by default. Fingerprints detect snapshot changes but do not prove source
+  authenticity or guarantee repeatable model responses. Because retained case metadata
+  is mutable and fingerprints are calculated on demand, the fingerprint validates the
+  current stored snapshot rather than establishing immutable execution-time identity.
+  Sequential execution is simple and traceable but does not optimize throughput.
