@@ -1,10 +1,10 @@
 # Project State
 
-Last updated: 2026-09-03
+Last updated: 2026-09-04
 
 ## Current milestone
 
-M0 — Foundation and evaluation specification: **complete**.
+M1 — Evaluation-case schema and dataset loading: **complete**.
 
 ## Implemented
 
@@ -14,14 +14,37 @@ M0 — Foundation and evaluation specification: **complete**.
 - A small repository-contract test suite.
 - Continuous-integration workflow for tests and linting.
 - Project vision, roadmap, evaluation specification, and decision log.
+- Evaluation-case schema version `"1"` with typed case and assertion objects.
+- Strict validation for required and optional fields, supported values, unknown fields,
+  non-null present fields, unique tags, unique assertion criteria, and JSON-compatible
+  metadata with finite numeric values. Validation applies recursively through both
+  mapping factories and exported typed constructors.
+- UTF-8 JSONL loading that preserves source order and ignores blank lines.
+- Actionable dataset errors with file, physical line, record, known case ID, and field
+  context.
+- Rejection of empty datasets, malformed JSON, unsupported versions, invalid records,
+  duplicate JSON object keys, and duplicate case identifiers.
+- Shallowly frozen case attributes with validation and recursive defensive copies at
+  metadata input and serialization boundaries. Case-owned metadata remains mutable by
+  design, and invalid mutations are rejected when `to_mapping()` is called.
+- A valid example dataset, valid and invalid test fixtures, and comprehensive boundary
+  tests, including loading the documented example through the public API.
 
 ## In progress
 
-Nothing. The repository is at a clean milestone boundary.
+Nothing. The repository is at a milestone boundary after M1.
+
+## Verification
+
+- Local interpreter: Python 3.14.0.
+- Complete test suite: 90 tests collected and 90 passed.
+- Ruff lint and format checks passed.
+- `git diff --check` passed.
+- No type checker is configured.
+- Python 3.11 baseline compatibility verified in GitHub Actions CI. Tests and Ruff checks passed successfully under Python 3.11.
 
 ## Not implemented
 
-- evaluation-case schema or dataset loader;
 - model/application provider interface;
 - evaluation runner or run artefacts;
 - deterministic or model-based evaluators;
@@ -33,13 +56,14 @@ Nothing. The repository is at a clean milestone boundary.
 ## Known issues and risks
 
 - The evaluation taxonomy is an initial design and will need refinement against real cases.
+- Schema v1 intentionally supports only three deterministic assertion shapes; their
+  execution semantics remain M3 work.
+- Schema migrations are not implemented. Unsupported versions fail explicitly so a
+  future loader can add version dispatch when a second schema is justified.
 - No empirical results exist, so the project cannot yet support claims about model quality or robustness.
-- CI is configured but will not have run until the repository is connected to a compatible Git hosting service.
-- Development dependencies must be installed before the full test and lint commands can run.
 
 ## Recommended next objective
 
-Implement M1: a minimal typed evaluation-case schema and a local JSONL dataset loader with explicit versioning and actionable validation errors.
-
-Completion should include valid and invalid fixtures, unit tests for validation boundaries, a documented example case, and accurate updates to this file. Avoid adding model APIs or evaluators during M1.
-
+Implement the next narrow M2 increment: a minimal provider-agnostic system-under-test
+protocol plus a deterministic test double. Do not add vendor SDKs, evaluators, scoring,
+or guardrail enforcement.
