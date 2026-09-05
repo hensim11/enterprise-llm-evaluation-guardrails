@@ -92,5 +92,7 @@ adapter introspection, but it does not detect secrets in explicitly supplied
 configuration or redact sensitive values from exception messages.
 
 Schema v1 is local and single-process. It does not record evaluators, scores, retries,
-concurrency, provider guarantees, code revision, or environment lock data. Those fields
-must not be inferred from execution success.
+concurrency, provider guarantees, code revision, or environment lock data. Deterministic
+evaluation is stored in the separate
+[evaluation artefact](EVALUATION_ARTIFACT_SPEC.md). Those fields must not be inferred from
+execution success.

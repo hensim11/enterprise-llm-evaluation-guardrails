@@ -216,7 +216,7 @@ class DatasetProvenance:
 
 @dataclass(frozen=True, slots=True)
 class RunArtifact:
-    """One complete raw execution run, separate from future evaluation results."""
+    """One complete raw execution run, separate from evaluation results."""
 
     run_id: str
     started_at: datetime

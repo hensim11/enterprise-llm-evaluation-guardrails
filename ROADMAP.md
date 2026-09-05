@@ -68,9 +68,13 @@ Expected completion criteria:
 - deterministic test doubles support repeatable tests;
 - run artefacts use a documented versioned format.
 
-## M3 — Deterministic evaluators and guardrails — not started
+## M3 — Deterministic evaluators and guardrails — in progress
 
 Add objective checks and a distinct enforcement interface.
+
+Delivered so far: literal exact-match, contains, and not-contains evaluation with explicit
+outcomes, canonical evidence reconciliation, and tests. Remaining milestone work includes
+regex or other justified checks and the separate guardrail enforcement interface.
 
 Expected completion criteria:
 
@@ -91,9 +95,14 @@ Expected completion criteria:
 - a small human-labelled calibration set exposes agreement and disagreement;
 - documentation addresses bias, variance, prompt sensitivity, and cost.
 
-## M5 — Adversarial and red-team suite — not started
+## M5 — Adversarial and red-team suite — in progress
 
 Build versioned cases for injection, leakage, unsafe compliance, refusal failures, and bypass attempts.
+
+Delivered so far: a versioned fictional-bank benchmark with adversarial cases, declared
+benign pairs, risk labels, expected behaviours, narrow literal assertions, and one retained
+real baseline result. Remaining milestone work includes a regression-case process informed
+by discovered failures.
 
 Expected completion criteria:
 
@@ -102,9 +111,13 @@ Expected completion criteria:
 - results do not imply security guarantees;
 - regression cases can be added from discovered failures.
 
-## M6 — Risk policy, aggregation, and reporting — not started
+## M6 — Risk policy, aggregation, and reporting — in progress
 
 Turn case-level evidence into transparent summaries and configurable decisions.
+
+Delivered so far: reconciled aggregation and shared machine/human report generation with
+explicit errors, denominators, coverage, category breakdowns, and case traceability.
+Configurable thresholds, precedence, and enforcement decisions remain unimplemented.
 
 Expected completion criteria:
 
@@ -124,10 +137,14 @@ Expected completion criteria:
 - tests cover resume/failure behaviour and compatibility boundaries;
 - a reproducibility guide demonstrates a clean repeat run.
 
-## M8 — Results analysis and portfolio presentation — not started
+## M8 — Results analysis and portfolio presentation — in progress
 
 Consolidate measured experiments into defensible findings and portfolio evidence. Real
 experiments are pulled forward into the fast-track batches rather than deferred until M8.
+
+Delivered so far: retained Batch A empirical evidence, reconciled deterministic metrics,
+and a concise README summary linked to case-level evidence. Remaining work includes deeper
+interpretation, final portfolio presentation, and an interview-ready walkthrough.
 
 Expected completion criteria:
 

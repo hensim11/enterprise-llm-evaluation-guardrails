@@ -7,10 +7,10 @@ This gives the evaluation work a realistic, risk-sensitive setting without imply
 access to real customer data, bank systems, or confidential policies. The framework's
 core contracts remain provider-agnostic.
 
-> **Current status:** Milestones M0, M1, and M2 are complete. The repository provides a
-> versioned evaluation-case schema, strict local JSONL loader, provider-agnostic
-> system-under-test contract, sequential baseline runner, and versioned raw run
-> artefacts. It does not yet evaluate or score outputs or enforce guardrails.
+> **Current status:** Milestones M0, M1, and M2 and the first measured capability batch are
+> complete. The repository now includes deterministic evaluation, reconciled reporting, a
+> versioned fictional-bank benchmark, an OpenAI Responses adapter, and retained empirical
+> baseline evidence. Guardrail enforcement and semantic evaluation are not implemented.
 
 ## Why this project exists
 
@@ -59,6 +59,8 @@ src/llm_eval_guardrails/  Python package
 tests/                    Automated tests
 tests/fixtures/           Valid and invalid loader fixtures
 examples/                 Illustrative input data (not evaluation evidence)
+benchmarks/               Versioned fictional evaluation benchmarks
+evidence/                 Reviewed, deliberately retained real-run evidence only
 docs/                     Methodology and technical specifications
 PROJECT_VISION.md         Stable purpose, scope, and principles
 ROADMAP.md                Planned milestones
@@ -78,7 +80,8 @@ pytest
 ruff check .
 ```
 
-No model provider credentials are required for the implemented milestones.
+The dependency-free core and offline evaluation workflow require no provider credentials.
+Install `.[dev,openai]` only when preparing an authorized OpenAI run.
 
 ## What is implemented now
 
@@ -93,15 +96,40 @@ No model provider credentials are required for the implemented milestones.
 - a sequential runner with per-case exception isolation and monotonic durations;
 - validated versioned JSON run artefacts with ordered case snapshots and SHA-256
   fingerprints;
+- literal execution of schema-v1 `exact_match`, `contains`, and `not_contains` assertions;
+- separate validated evaluation artefacts with explicit pass, fail, error, and
+  not-applicable semantics and strict raw-evidence joins;
+- reconciled aggregation with explicit denominators, coverage, per-risk-category results,
+  case traces, and shared JSON/Markdown rendering;
+- an isolated optional OpenAI Responses API adapter with explicit model and prompt
+  provenance;
+- a versioned 36-case fictional Northstar Bank benchmark with adversarial and benign
+  paired controls;
+- offline re-evaluation and atomic end-to-end output-bundle commands;
 - a local synthetic echo-run command requiring no provider credentials;
 - representative fixtures and an illustrative example dataset;
 - a milestone roadmap with verification criteria;
 - test, lint, and continuous-integration configuration; and
 - an explicit record of architectural decisions.
 
-Sections that describe the case schema, system interface, baseline runner, and run
-artefacts document implemented capability. Features explicitly described as planned or
-listed under limitations remain targets rather than claims of completed capability.
+Sections that describe the case schema, system interface, runner, raw/evaluated artefacts,
+and reporting document implemented capability. One reviewed provider-backed baseline is
+retained as evidence.
+
+## Measured Batch A baseline
+
+The 36-case Northstar Bank benchmark was run once against the exact model snapshot
+`gpt-5.4-mini-2026-03-17`. All 36 executions completed successfully. Deterministic
+evaluation passed 36 of 38 configured literal assertions (94.74%); 31 of 36 cases had at
+least one deterministic assertion, and five remain semantically unassessed. The two failed
+assertions were literal wording mismatches, not execution errors.
+
+See the [retained Markdown report](evidence/baselines/northstar-v1-gpt-5.4-mini-2026-03-17-20260905/report.md)
+for category results and case-level traceability into raw and evaluated evidence. Execution
+success does not mean evaluation success, and these narrow configured checks do not
+establish semantic correctness, safety, privacy, prompt-injection robustness, security, or
+production readiness. Provider usage was not retained, so the actual token cost cannot be
+reconstructed from the evidence.
 
 ## Evaluation-case schema v1
 
@@ -176,7 +204,7 @@ references, assertions, expected behaviour, risk labels, tags, and metadata rema
 the evaluation layer and are not system inputs. Requests follow the case schema's
 non-empty string conventions and preserve accepted strings and context order without
 trimming or coercion. `SystemResponse` contains the raw output text; an empty output
-string is valid and remains observable for future evaluation, while a non-string output
+string is valid and remains observable for downstream evaluation, while a non-string output
 is rejected.
 
 Implementations may raise ordinary exceptions. The interface does not turn exceptions
@@ -252,12 +280,75 @@ it is not a model evaluation or evidence of quality, banking correctness, or saf
 See [the run artefact specification](docs/RUN_ARTIFACT_SPEC.md) for the versioned JSON
 contract, fingerprint algorithm, timing units, error semantics, and limitations.
 
+## Deterministic evaluation and reporting
+
+`evaluate_run()` applies each configured assertion directly to successful raw output.
+Comparisons are case-sensitive and literal, with no trimming, Unicode normalization,
+rewriting, or semantic interpretation. Execution errors remain execution errors and
+produce explicit evaluation-error evidence; successful cases without assertions are
+`not_applicable`.
+
+The separate evaluation artefact is joined to raw evidence by run ID, dataset fingerprint,
+ordered case IDs, and execution statuses, then every stored outcome and evidence field is
+checked against a canonical recomputation from the raw run. Aggregation exposes assertion
+pass rate, assertion evaluation coverage, deterministic case coverage, errors, and
+non-applicable cases rather than allowing excluded evidence to inflate a result. JSON and
+Markdown reports come from the same aggregate and support exact persisted-output
+comparison.
+
+Run an offline evaluation bundle with:
+
+```bash
+python -m llm_eval_guardrails evaluate \
+  /path/to/raw-run.json \
+  /path/to/new-evaluation-bundle
+```
+
+The output directory must not exist. See the
+[evaluation artefact specification](docs/EVALUATION_ARTIFACT_SPEC.md) for exact semantics
+and denominators.
+
+## Fictional-bank OpenAI baseline
+
+The optional adapter uses the official OpenAI Python SDK and Responses API. Its model is a
+required CLI option; credentials are read by the SDK from `OPENAI_API_KEY` and are never a
+CLI argument or provenance field. Only request input and ordered context are formatted for
+the provider, alongside the versioned fixed system instructions. The real client disables
+SDK retries, every request sets `store=False`, and only top-level status `completed` is
+accepted. The non-secret provenance includes the installed SDK version.
+
+After explicit model selection and paid-use authorization, the complete 36-request workflow
+is:
+
+```bash
+python -m llm_eval_guardrails run-openai \
+  benchmarks/northstar_bank_v1.jsonl \
+  /path/to/new-openai-baseline-bundle \
+  --model MODEL_ID \
+  --max-output-tokens 800 \
+  --run-id RUN_ID
+```
+
+The four-file bundle is published atomically only after raw evidence, evaluated evidence,
+JSON summary, and Markdown report all succeed. The versioned assistant prompt is part of
+the baseline system, not a runtime guardrail or security guarantee. Benchmark composition,
+credential handling, reproduction, and evidence-retention review are documented in the
+[baseline workflow](docs/BASELINE_WORKFLOW.md).
+
+The command makes 36 application-level calls if every case is attempted. Disabling SDK
+retries prevents automatic retry HTTP attempts by the SDK; no application retries or
+fallbacks exist. `store=False` minimizes Responses application-state retention, but does
+not remove default provider abuse-monitoring retention or confer account-level Zero Data
+Retention. Only fictional and synthetic benchmark data is sent.
+
 ## Limitations
 
-- No real model provider or application adapter exists yet; only the deterministic echo
-  test double is implemented.
-- No evaluation, scoring, guardrail, reporting, or red-team runtime exists yet.
-- The runner is sequential and has no retries, resume support, or concurrency.
+- Deterministic string checks have narrow literal coverage and cannot establish semantic
+  correctness, safety, groundedness, privacy, or injection resistance.
+- No guardrail enforcement, policy decision, model-based judge, semantic score, regex
+  assertion, dashboard, or second provider is implemented.
+- The runner is sequential and has no application or SDK retries, resume support, or
+  concurrency.
 - Run provenance supports case reconstruction and change detection but does not guarantee
   repeatable responses from nondeterministic systems.
 - A fingerprint validates the case snapshot in its current stored state. Case metadata
@@ -265,10 +356,12 @@ contract, fingerprint algorithm, timing units, error semantics, and limitations.
   identity of the snapshot at execution time.
 - Complete case snapshots, raw outputs, and exception messages may contain sensitive
   information. The runner performs no automatic redaction.
-- Assertion definitions are validated and stored but are not executed yet.
 - Schema v1 has no migration utility; future loaders can dispatch on the required
   `schema_version` without changing v1 data.
-- No empirical robustness, accuracy, or security claims can be made.
+- The retained result is one finite observation and does not support general robustness,
+  accuracy, safety, privacy, or security claims.
+- Provider token usage was not retained, so actual run cost cannot be reconstructed from
+  the evidence.
 - The measurement design will need calibration against labelled examples once model-based judging is introduced.
 
 ## Working principles

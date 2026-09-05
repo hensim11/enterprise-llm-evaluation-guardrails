@@ -20,7 +20,7 @@ class RiskCategory(StrEnum):
 
 
 class AssertionType(StrEnum):
-    """Structured deterministic assertions whose execution belongs to a later milestone."""
+    """Structured deterministic assertions supported by schema and evaluator v1."""
 
     EXACT_MATCH = "exact_match"
     CONTAINS = "contains"
