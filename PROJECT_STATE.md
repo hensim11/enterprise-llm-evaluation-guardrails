@@ -4,11 +4,11 @@ Last updated: 2026-09-05
 
 ## Current milestone
 
-M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A crosses
-parts of M3, M5, M6, and M8 and is **complete**: its empirical baseline gate and closeout
-checks passed, and the reviewed change set is ready to commit. M3, M5, M6, and M8 remain
-**in progress**; their remaining guardrail, regression, policy, interpretation, and
-portfolio criteria are outside this batch.
+M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A is
+complete and committed in `7b120426`, including its implementation and retained empirical
+evidence. It crosses parts of M3, M5, M6, and M8; those milestones remain **in progress**,
+and their remaining guardrail, regression, policy, interpretation, and portfolio criteria
+are outside this batch.
 
 ## Implemented
 
