@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 ## Current milestone
 
@@ -99,7 +99,9 @@ Nothing. The repository is at a milestone boundary after M2.
 
 ## Recommended next objective
 
-Implement the first narrow M3 increment: deterministic evaluator result contracts and
-execution for the existing exact-match, contains, and not-contains assertions against
-stored raw run records. Keep evaluator evidence separate from execution status and do
-not add guardrail enforcement yet.
+Deliver Batch A — First measured baseline, as defined in
+`docs/DELIVERY_WORKFLOW.md`. Build from the completed M2 runner to execute the existing
+deterministic assertions, add the minimum traceable aggregation/reporting path, introduce
+one real provider adapter, author the initial fictional-bank benchmark, and produce a real
+retained baseline run. Keep evaluator evidence separate from execution status and exclude
+guardrail enforcement and model-based judging from this batch.

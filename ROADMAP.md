@@ -2,6 +2,24 @@
 
 Status values: **complete**, **in progress**, **not started**. A milestone is complete only when its stated verification is satisfied.
 
+## Delivery strategy from the M2 boundary
+
+Milestones track capability status; they are not mandatory owner-review boundaries. From
+the completed M2 boundary onward, work is delivered in bounded vertical batches that may
+cross milestones when doing so produces a runnable, measurable outcome sooner.
+
+The current fast-track sequence is:
+
+1. first measured baseline: deterministic evaluation, minimum reporting, one real adapter,
+   and an initial fictional-bank benchmark;
+2. guardrail impact comparison on the same benchmark;
+3. structured semantic evaluation with a small calibration set; and
+4. reproducibility hardening and portfolio presentation.
+
+See [`docs/DELIVERY_WORKFLOW.md`](docs/DELIVERY_WORKFLOW.md) for batch boundaries,
+acceptance evidence, escalation rules, and the review gate. Milestone statuses below still
+change only when their own criteria are satisfied.
+
 ## M0 — Foundation and evaluation specification — complete
 
 Establish the repository contract before implementing evaluation behaviour.
@@ -108,7 +126,8 @@ Expected completion criteria:
 
 ## M8 — Results analysis and portfolio presentation — not started
 
-Run real experiments and present defensible findings.
+Consolidate measured experiments into defensible findings and portfolio evidence. Real
+experiments are pulled forward into the fast-track batches rather than deferred until M8.
 
 Expected completion criteria:
 

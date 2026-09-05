@@ -278,4 +278,5 @@ contract, fingerprint algorithm, timing units, error semantics, and limitations.
 - Prefer multiple complementary evaluators over a single opaque score.
 - Treat model-based judging as noisy measurement.
 - Make thresholds and policy choices explicit.
-- Build one independently testable milestone at a time.
+- Deliver bounded vertical capability batches, using independently testable increments
+  inside each batch.
