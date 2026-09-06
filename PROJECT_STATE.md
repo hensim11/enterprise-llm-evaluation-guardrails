@@ -1,14 +1,14 @@
 # Project State
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 ## Current milestone
 
 M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A is
-complete and committed in `7b120426`, including its implementation and retained empirical
-evidence. It crosses parts of M3, M5, M6, and M8; those milestones remain **in progress**,
-and their remaining guardrail, regression, policy, interpretation, and portfolio criteria
-are outside this batch.
+complete and committed in `7b120426`. Batch B's implementation and offline acceptance
+evidence are ready, but its real guardrailed provider run remains pending explicit
+credentials/spend authorization, so Batch B is not yet measured or complete. M3, M5, M6,
+and M8 remain **in progress**.
 
 ## Implemented
 
@@ -78,6 +78,30 @@ are outside this batch.
 - A versioned 36-case fictional Northstar Bank benchmark with 38 honest literal assertions,
   eight risk categories, unsupported-claim traps, financial boundaries, privacy and
   injection attacks, and benign paired controls.
+- A request-only runtime wrapper that exposes only input and ordered context to input
+  guardrails and additionally the candidate response to response guardrails; case IDs and
+  all evaluation-only fields are attached after enforcement.
+- Northstar runtime guardrail policy version `"1"` with explicit `BLOCK > WARN > PASS`
+  precedence; narrow authentication-disclosure, financial-directive, hidden-prompt,
+  override-indicator, and response-leakage detectors; and versioned block responses.
+- Input blocks that avoid underlying invocation while producing successful externally
+  observed raw output, and response blocks that withhold and replace a candidate without
+  turning either policy action into an execution error.
+- Versioned guardrail-decision artefact schema `"1"` with policy/detector versions,
+  triggers/stages, invocation/release/replacement state, non-sensitive explanations,
+  candidate digests, strict raw joins, and canonical validation.
+- Versioned matched-comparison schema `"1"` with complete configuration identity and
+  differences, guardrail decision/trigger counts, avoided invocations, deterministic
+  deltas/transitions, narrow benign false-refusal measurement, separate benign warnings,
+  adversarial decisions, unclassified cases, and complete case traces.
+- Workflow-derived `deterministic_replay` and `fresh_provider_execution` comparison modes
+  with machine-readable and Markdown attribution. Replay uses the same retained candidates;
+  fresh-provider PASS/WARN outputs and resulting deltas are explicitly observational and
+  potentially confounded, while input-block invocation avoidance is directly attributable.
+- Typed portable evidence references resolve from the comparison bundle or repository root;
+  machine-specific absolute paths and unrelated external baseline locations are rejected.
+- Atomic replay and OpenAI guardrailed CLI workflows producing raw/evaluated evidence,
+  ordinary JSON/Markdown reports, decisions, and machine/human comparison reports.
 
 ## Batch A closeout
 
@@ -89,7 +113,7 @@ are outside this batch.
 
 - Local interpreter: Python 3.14.0.
 - Focused OpenAI adapter tests: 37 passed.
-- Complete test suite: 201 tests collected and 201 passed.
+- Complete test suite: 230 tests collected and 230 passed.
 - Ruff lint and format checks passed; `git diff --check` passed.
 - The 36-case benchmark completed through the offline echo CLI and atomic evaluation
   workflow. All raw/evaluated joins and report indices were inspected programmatically;
@@ -125,13 +149,27 @@ are outside this batch.
 - No type checker is configured.
 - Python 3.11 compatibility for the completed M2 code has not yet been executed locally or
   confirmed by CI; the workflow is configured to run the suite under Python 3.11.
+- Batch B focused tests demonstrate request-only detector inputs, input-block invocation
+  avoidance with a counting fake, response replacement with deliberately leaking fake
+  outputs, exact artefact joins, canonical tamper rejection, classification denominators,
+  matched transitions, both comparison modes and their attribution boundaries, portable
+  resolvable evidence references, external-location rejection, and seven-file CLI
+  publication.
+- The full 36-case deterministic replay against retained Batch A outputs preserved the
+  required fingerprint and produced exactly 36 successful observed raw outputs and 36
+  decisions: 24 PASS, 3 WARN, and 9 BLOCK, with 9 replay invocations avoided. Benign false
+  refusals were 0/18 and benign warnings were 0/18. Adversarial decisions were 8 BLOCK, 3
+  WARN, and 2 PASS; five cases were unclassified. Literal assertions changed from 36 pass / 2
+  fail to 35 pass / 3 fail. These are inspected synthetic replay results, not a new provider
+  measurement. The regenerated comparison declared `deterministic_replay`, retained no
+  machine-specific absolute paths in JSON or Markdown, and all five evidence references
+  resolved from their declared repository or bundle bases.
 
 ## Not implemented
 
-- guardrail enforcement;
 - model-based or semantic evaluators;
 - regex and richer deterministic checks;
-- configurable risk policies or enforcement decisions;
+- a general configurable risk-threshold language beyond the explicit Northstar policy;
 - additional providers, application or SDK retries, concurrency, dashboards, databases, or
   hosted services.
 
@@ -163,10 +201,20 @@ are outside this batch.
   mutable retained metadata and on-demand calculation mean they are not immutable
   execution-time identities. They also do not prove source authenticity or make
   nondeterministic system responses reproducible.
+- Guardrail v1 uses narrow regex, phrase, labelled-value, canary, and digit-shape matching.
+  It can produce false positives and can be bypassed; it is not semantic understanding,
+  broad PII detection, redaction, or a security guarantee.
+- Withheld response candidates are represented only by SHA-256 digests. This minimizes
+  copied sensitive evidence but prevents independent canonical replay of a response-block
+  match without separately retaining the candidate.
+- The deterministic replay isolates policy effects over retained outputs but is not a fresh
+  provider run and cannot measure new model/guardrail interaction or nondeterminism.
+- A future fresh-provider comparison can directly attribute avoided invocations to input
+  blocks, but its PASS/WARN outputs, outcome transitions, and metric deltas can also reflect
+  provider/model nondeterminism and must remain labelled observational.
 
 ## Recommended next objective
 
-Deliver Batch B's matched guardrail-impact comparison on the unchanged 36-case benchmark.
-Keep evaluation evidence distinct from runtime enforcement, use the retained Batch A run as
-the comparison baseline, measure false refusals against benign controls, and follow the same
-authorization and evidence-retention conventions for any paid execution.
+After explicit owner authorization, execute and inspect the real Batch B guardrailed run
+against the exact retained model snapshot and unchanged benchmark. Retain evidence only
+after raw outputs, decisions, comparisons, credentials, and published claims pass review.

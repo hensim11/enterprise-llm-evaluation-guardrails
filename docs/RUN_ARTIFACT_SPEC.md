@@ -73,6 +73,12 @@ Python's monotonic `time.perf_counter()` and recorded in seconds. A successful e
 means only that the system returned a valid `SystemResponse`; it says nothing about
 correctness, safety, compliance, or any future evaluation criterion.
 
+For a guardrailed run, the invoked `SystemUnderTest` is the runtime wrapper, so duration
+covers its input check, any underlying invocation, its response check, and construction of
+the externally observed response. An input block therefore measures only the wrapper path.
+Guardrail fields remain absent from this schema and are retained in the separate decision
+artefact.
+
 An ordinary exception or a return value that is not `SystemResponse` becomes a case
 execution error, with the fully qualified exception type and its message retained. The
 runner then continues to the next case. It catches `Exception`, not `BaseException`, so

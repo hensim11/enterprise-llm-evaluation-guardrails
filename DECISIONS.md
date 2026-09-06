@@ -152,3 +152,32 @@ Only architectural or methodological decisions belong here. Implementation detai
   default abuse-monitoring retention or establish Zero Data Retention. Prompt instructions
   are system behaviour under test, not separate guardrail enforcement or a security
   guarantee.
+
+## ADR-011 — Enforce at the request boundary and retain separate matched evidence
+
+- **Date:** 2026-09-06
+- **Status:** accepted
+- **Decision:** Wrap the provider-neutral system with a versioned runtime policy that sees
+  only input and ordered context and, after invocation, the candidate response. Use explicit
+  `BLOCK > WARN > PASS` precedence. Represent blocks as successful versioned observed
+  outputs, keep every guardrail decision in a separate versioned artefact, and compare it
+  only with raw/evaluated runs having the same fingerprint and ordered case IDs. Retain a
+  digest rather than the withheld response candidate. Persist a workflow-derived
+  deterministic-replay or fresh-provider comparison mode with mode-specific attribution,
+  and identify evidence through typed bundle-relative or repository-relative references.
+- **Rationale:** A wrapper preserves the existing system contract and raw/evaluated schemas
+  while making invocation avoidance and response replacement observable. Separate evidence
+  prevents enforcement from becoming an evaluation outcome. Strict matched-run comparison
+  stops dataset drift from being presented as guardrail impact. Candidate minimization
+  avoids copying detected secrets into decision evidence.
+- **Consequences:** Input decisions can be canonically recomputed from the stored case
+  request, and released outputs can be rechecked. For response blocks, the loader can verify
+  the canonical trigger/state/replacement and digest shape but cannot independently rerun
+  the response match without the intentionally unretained candidate. Policy v1 is a narrow
+  benchmark-justified phrase/regex system, not semantic understanding, redaction, a broad
+  PII catalogue, or a security guarantee. Replay can attribute differences to guardrail and
+  deterministic evaluation treatment of retained candidates. Fresh-provider deltas beyond
+  input-block invocation avoidance remain observational because model/provider
+  nondeterminism can contribute. Comparison evidence is portable across machines when its
+  declared bundle or repository base is preserved; unrelated external baseline locations
+  are rejected rather than serialized as absolute paths.
