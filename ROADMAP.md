@@ -2,6 +2,24 @@
 
 Status values: **complete**, **in progress**, **not started**. A milestone is complete only when its stated verification is satisfied.
 
+## Delivery strategy from the M2 boundary
+
+Milestones track capability status; they are not mandatory owner-review boundaries. From
+the completed M2 boundary onward, work is delivered in bounded vertical batches that may
+cross milestones when doing so produces a runnable, measurable outcome sooner.
+
+The current fast-track sequence is:
+
+1. first measured baseline: deterministic evaluation, minimum reporting, one real adapter,
+   and an initial fictional-bank benchmark;
+2. guardrail impact comparison on the same benchmark;
+3. structured semantic evaluation with a small calibration set; and
+4. reproducibility hardening and portfolio presentation.
+
+See [`docs/DELIVERY_WORKFLOW.md`](docs/DELIVERY_WORKFLOW.md) for batch boundaries,
+acceptance evidence, escalation rules, and the review gate. Milestone statuses below still
+change only when their own criteria are satisfied.
+
 ## M0 — Foundation and evaluation specification — complete
 
 Establish the repository contract before implementing evaluation behaviour.
@@ -50,9 +68,13 @@ Expected completion criteria:
 - deterministic test doubles support repeatable tests;
 - run artefacts use a documented versioned format.
 
-## M3 — Deterministic evaluators and guardrails — not started
+## M3 — Deterministic evaluators and guardrails — in progress
 
 Add objective checks and a distinct enforcement interface.
+
+Delivered so far: literal exact-match, contains, and not-contains evaluation with explicit
+outcomes, canonical evidence reconciliation, and tests. Remaining milestone work includes
+regex or other justified checks and the separate guardrail enforcement interface.
 
 Expected completion criteria:
 
@@ -73,9 +95,14 @@ Expected completion criteria:
 - a small human-labelled calibration set exposes agreement and disagreement;
 - documentation addresses bias, variance, prompt sensitivity, and cost.
 
-## M5 — Adversarial and red-team suite — not started
+## M5 — Adversarial and red-team suite — in progress
 
 Build versioned cases for injection, leakage, unsafe compliance, refusal failures, and bypass attempts.
+
+Delivered so far: a versioned fictional-bank benchmark with adversarial cases, declared
+benign pairs, risk labels, expected behaviours, narrow literal assertions, and one retained
+real baseline result. Remaining milestone work includes a regression-case process informed
+by discovered failures.
 
 Expected completion criteria:
 
@@ -84,9 +111,13 @@ Expected completion criteria:
 - results do not imply security guarantees;
 - regression cases can be added from discovered failures.
 
-## M6 — Risk policy, aggregation, and reporting — not started
+## M6 — Risk policy, aggregation, and reporting — in progress
 
 Turn case-level evidence into transparent summaries and configurable decisions.
+
+Delivered so far: reconciled aggregation and shared machine/human report generation with
+explicit errors, denominators, coverage, category breakdowns, and case traceability.
+Configurable thresholds, precedence, and enforcement decisions remain unimplemented.
 
 Expected completion criteria:
 
@@ -106,9 +137,14 @@ Expected completion criteria:
 - tests cover resume/failure behaviour and compatibility boundaries;
 - a reproducibility guide demonstrates a clean repeat run.
 
-## M8 — Results analysis and portfolio presentation — not started
+## M8 — Results analysis and portfolio presentation — in progress
 
-Run real experiments and present defensible findings.
+Consolidate measured experiments into defensible findings and portfolio evidence. Real
+experiments are pulled forward into the fast-track batches rather than deferred until M8.
+
+Delivered so far: retained Batch A empirical evidence, reconciled deterministic metrics,
+and a concise README summary linked to case-level evidence. Remaining work includes deeper
+interpretation, final portfolio presentation, and an interview-ready walkthrough.
 
 Expected completion criteria:
 

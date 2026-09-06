@@ -20,6 +20,9 @@ dev = [
   "pytest>=8.0,<9.0",
   "ruff>=0.6,<1.0",
 ]
+openai = [
+  "openai>=1.66.0,<3.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_eval_guardrails"]

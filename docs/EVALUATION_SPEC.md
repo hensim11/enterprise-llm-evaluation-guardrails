@@ -1,15 +1,15 @@
 # Initial Evaluation Specification
 
-This document defines the M0 measurement contract. The case-specification and raw
-execution layers now have M1 and M2 implementations; the evaluation-result layer remains
-planned. This document is not evidence that an evaluator exists.
+This document defines the initial measurement contract. Case specification, raw execution,
+and the narrow deterministic string-evaluation slice are implemented. Semantic evaluation,
+guardrail enforcement, and policy decisions remain planned.
 
 ## Unit of evaluation
 
 An **evaluation case** is the smallest versioned test specification. It will identify an input, relevant context, risk metadata, and zero or more expectations. A **run** applies a fixed system and configuration to a versioned dataset and records one result per case.
 
-The architecture preserves three layers; M1 and M2 implement the first two, while the
-third remains planned:
+The architecture preserves three layers, all now represented by separate versioned
+artefacts for deterministic evaluation:
 
 1. **Case specification:** what behaviour is being tested.
 2. **Raw execution:** what the system produced under a recorded configuration.
@@ -47,7 +47,11 @@ Every evaluator should produce one of these states before optional numeric aggre
 
 ### Deterministic checks
 
-Use for properties such as exact output, substring exclusion, regular-expression matching, JSON/schema validity, field constraints, and sensitive canaries. They are reproducible and easy to debug but cannot reliably measure broad semantic quality.
+The implemented v1 checks are exact match, literal substring inclusion, and literal
+substring exclusion. They use case-sensitive raw strings without normalization. Regular
+expressions, JSON/schema checks, and other deterministic methods remain future work. These
+checks are reproducible and easy to debug but cannot reliably measure broad semantic
+quality. See [the artefact specification](EVALUATION_ARTIFACT_SPEC.md).
 
 ### Reference-based checks
 
@@ -94,7 +98,6 @@ Before relying on a model-based metric, compare it with a small human-labelled s
 
 ## Open questions for later milestones
 
-- Which fields belong in the minimal M1 case schema without overfitting future evaluators?
 - Which risk taxonomy provides enough structure without implying regulatory coverage?
 - How should sensitive evidence be redacted while retaining reproducibility?
 - Which agreement and variance measures are proportionate for the first judge calibration?

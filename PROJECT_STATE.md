@@ -1,10 +1,14 @@
 # Project State
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 ## Current milestone
 
-M2 — Provider-agnostic system interface and baseline runner: **complete**.
+M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A is
+complete and committed in `7b120426`, including its implementation and retained empirical
+evidence. It crosses parts of M3, M5, M6, and M8; those milestones remain **in progress**,
+and their remaining guardrail, regression, policy, interpretation, and portfolio criteria
+are outside this batch.
 
 ## Implemented
 
@@ -54,44 +58,107 @@ M2 — Provider-agnostic system interface and baseline runner: **complete**.
   without network access or provider credentials.
 - Documentation for runner invocation, data flow, execution/error semantics, artefact
   fields, fingerprint construction, confidentiality, and reproducibility limitations.
+- Literal, case-sensitive deterministic evaluation for schema-v1 `exact_match`, `contains`,
+  and `not_contains`, without trimming, normalization, or semantic interpretation.
+- Versioned evaluated-run schema `"1"` with pass, fail, error, and not-applicable semantics,
+  per-assertion evidence, raw-execution-error propagation, round-trip validation, and exact
+  run/fingerprint/case-order/status reconciliation. Persisted case outcomes and evidence
+  must equal a canonical recomputation from the raw run.
+- One reconciled aggregate feeding both summary JSON and Markdown, with explicit pass-rate
+  and coverage denominators, undefined zero-denominator rates, per-risk-category results,
+  an uncategorized bucket, and case-level raw/evaluated indices.
+- Atomic offline and OpenAI output-directory workflows that refuse overwrite and never
+  present a partially generated set as a completed experiment.
+- An optional isolated OpenAI Responses API adapter with mandatory explicit model, standard
+  environment credential loading, a versioned fictional-bank prompt/context formatter,
+  completed-response enforcement, ordered extraction of output-text and refusal blocks,
+  explicit rejection of malformed or unsupported message content, SDK retries explicitly
+  disabled, `store=False`, fake-client offline tests, and explicit non-secret provenance
+  including SDK version.
+- A versioned 36-case fictional Northstar Bank benchmark with 38 honest literal assertions,
+  eight risk categories, unsupported-claim traps, financial boundaries, privacy and
+  injection attacks, and benign paired controls.
 
-## In progress
+## Batch A closeout
 
-Nothing. The repository is at a milestone boundary after M2.
+- Batch A implementation, documentation, and one authorized paid baseline execution passed
+  the review and validation gates. The four-file evidence package is retained under
+  `evidence/baselines/northstar-v1-gpt-5.4-mini-2026-03-17-20260905/`.
 
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Focused runner regression and artefact-validation tests: 24 tests collected and 24
-  passed.
-- Complete test suite: 130 tests collected and 130 passed.
-- Ruff lint and format checks passed.
-- `git diff --check` passed.
-- The documented synthetic echo CLI demonstration completed with two ordered results;
-  its generated artefact was inspected and loaded through the public artefact reader.
+- Focused OpenAI adapter tests: 37 passed.
+- Complete test suite: 201 tests collected and 201 passed.
+- Ruff lint and format checks passed; `git diff --check` passed.
+- The 36-case benchmark completed through the offline echo CLI and atomic evaluation
+  workflow. All raw/evaluated joins and report indices were inspected programmatically;
+  the persisted JSON summary exactly matched a newly derived aggregate, and credential
+  markers were absent. Its echo outputs and metrics are synthetic plumbing evidence, not
+  model measurements, and were not retained in the repository.
+- The post-refusal-remediation 36-case offline run retained 36 ordered raw results and 36
+  ordered evaluated results. Its JSON summary and Markdown report matched fresh canonical
+  regeneration exactly, and its synthetic echo provider path made no network request.
+- OpenAI SDK 1.66.0 is installed in the ignored local virtual environment. Its wheel was
+  inspected for the Responses `create`, `store`, response status, ordered output-message
+  structure, distinct output-text/refusal blocks, and client `max_retries` surfaces used
+  here. Mocked tests prove ordered text/refusal preservation, malformed-content rejection,
+  `max_retries=0`, `store=False`, completed-only success, and SDK-version provenance.
+- One explicitly authorized run used `gpt-5.4-mini-2026-03-17`, SDK 1.66.0,
+  `northstar-bank-assistant-v1`, `ordered-context-v1`, `max_retries=0`, `store=False`, and
+  a maximum of 800 output tokens for each of 36 sequential application-level requests.
+  The credential was supplied through the process environment and was not copied into
+  source, configuration, logs, or evidence artefacts. No API key is stored in tracked
+  project files or retained evidence.
+- The paid baseline retained 36 ordered successful raw records and 36 ordered evaluated
+  records for dataset fingerprint
+  `6e6c9f92825f2ab266521180968f3eeb6341df7e0acd448916dac670bed0d698`.
+  Canonical evaluated-evidence recomputation and exact JSON/Markdown regeneration passed.
+  There were no execution errors, incomplete responses, or empty successful outputs.
+- Measured literal outcomes were 29 pass, 2 fail, 0 error, and 5 not applicable at case
+  level, and 36 pass, 2 fail, and 0 error across 38 assertions: a 94.74% deterministic
+  assertion pass rate with 100% assertion-evaluation coverage. These are narrow surface-form
+  measurements, not semantic correctness, robustness, privacy, safety, or security claims.
+- Summed recorded request durations were 45.037322 seconds; individual durations ranged
+  from 0.583229 to 3.077542 seconds with a 1.251037-second mean. The artefacts do not retain
+  provider token usage, so actual token cost cannot be reconstructed from this evidence.
 - No type checker is configured.
 - Python 3.11 compatibility for the completed M2 code has not yet been executed locally or
   confirmed by CI; the workflow is configured to run the suite under Python 3.11.
 
 ## Not implemented
 
-- deterministic or model-based evaluators;
-- prompt-injection or red-team dataset;
 - guardrail enforcement;
-- risk policy engine, aggregation, or reports;
-- model integrations or measured experiment results.
+- model-based or semantic evaluators;
+- regex and richer deterministic checks;
+- configurable risk policies or enforcement decisions;
+- additional providers, application or SDK retries, concurrency, dashboards, databases, or
+  hosted services.
 
 ## Known issues and risks
 
-- The evaluation taxonomy is an initial design and will need refinement against real cases.
-- Schema v1 intentionally supports only three deterministic assertion shapes; their
-  execution semantics remain M3 work.
+- The evaluation taxonomy and authored assertions will need review against real outputs.
+- The 38 assertions measure literal surface properties only; five cases have no applicable
+  deterministic assertion, and broader expected behaviours need future semantic evaluation.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
-- No empirical results exist, so the project cannot yet support claims about model quality or robustness.
+- One 36-case empirical run exists, but a single finite run with literal assertions cannot
+  establish model quality, robustness, safety, privacy, groundedness, or security beyond
+  the recorded observations.
 - Run artefacts intentionally retain complete case specifications, outputs, and error
   messages and may therefore require sensitive-data handling. Configuration safety is
   caller-controlled; there is no automatic secret detection or redaction.
+- `store=False` minimizes Responses API application-state retention but does not disable
+  provider abuse-monitoring retention or establish Zero Data Retention. The benchmark is
+  synthetic; real customer data remains out of scope.
+- Five successful cases have no deterministic assertions and remain explicitly not
+  applicable rather than semantically assessed. The two deterministic failures are literal
+  phrase mismatches and require interpretation alongside their case-level evidence.
+- Provider content-block types are not retained in raw artefact schema v1, so the evidence
+  preserves refusal-like output text but cannot establish whether the provider emitted a
+  dedicated `refusal` block. The adapter behaviour is covered by SDK-shaped offline tests.
+- Provider token usage is not retained, so actual cost cannot be reconstructed without an
+  additional provider request, which was not authorized or made.
 - Dataset fingerprints validate the current stored case snapshot and detect changes, but
   mutable retained metadata and on-demand calculation mean they are not immutable
   execution-time identities. They also do not prove source authenticity or make
@@ -99,7 +166,7 @@ Nothing. The repository is at a milestone boundary after M2.
 
 ## Recommended next objective
 
-Implement the first narrow M3 increment: deterministic evaluator result contracts and
-execution for the existing exact-match, contains, and not-contains assertions against
-stored raw run records. Keep evaluator evidence separate from execution status and do
-not add guardrail enforcement yet.
+Deliver Batch B's matched guardrail-impact comparison on the unchanged 36-case benchmark.
+Keep evaluation evidence distinct from runtime enforcement, use the retained Batch A run as
+the comparison baseline, measure false refusals against benign controls, and follow the same
+authorization and evidence-retention conventions for any paid execution.

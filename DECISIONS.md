@@ -108,3 +108,47 @@ Only architectural or methodological decisions belong here. Implementation detai
   is mutable and fingerprints are calculated on demand, the fingerprint validates the
   current stored snapshot rather than establishing immutable execution-time identity.
   Sequential execution is simple and traceable but does not optimize throughput.
+
+## ADR-009 — Use literal deterministic semantics and separately joined evidence
+
+- **Date:** 2026-09-05
+- **Status:** accepted
+- **Decision:** Execute schema-v1 assertions with unmodified, case-sensitive Python string
+  equality and membership. Store results in a separate versioned evaluation artefact joined
+  to raw evidence by run ID, dataset fingerprint, ordered case ID, and execution status.
+  Aggregate pass rate only over pass/fail assertions, while reporting evaluation coverage,
+  execution errors, non-applicable cases, and zero denominators explicitly. Render JSON and
+  Markdown from one aggregate representation.
+- **Rationale:** Literal operations are reproducible and auditable, while normalization or
+  semantic interpretation would silently change the assertion contract. Strong joins stop
+  stale or partial evidence from being combined. Separate denominators prevent unavailable
+  evidence from improving apparent results.
+- **Consequences:** Surface-form variation can fail otherwise acceptable answers, and many
+  important behaviours remain unmeasured until semantic evaluation exists. The reports are
+  intentionally detailed and do not produce a composite safety score or policy decision.
+
+## ADR-010 — Isolate one explicit OpenAI baseline configuration
+
+- **Date:** 2026-09-05
+- **Status:** accepted
+- **Decision:** Implement one optional OpenAI adapter with the official Python SDK and
+  Responses API behind `SystemUnderTest`. Require the model ID, version the fictional-bank
+  instructions and ordered-context formatter, and serialize only an explicit non-secret
+  provenance allowlist including the installed SDK version. Require a completed top-level
+  provider status before accepting output, construct the SDK client with `max_retries=0`,
+  and send `store=False` on every request. Constrain the optional dependency to the verified
+  compatible range `openai>=1.66.0,<3.0`. Publish multi-file workflows through a temporary
+  sibling directory and one final rename.
+- **Rationale:** One real adapter enables measurement without coupling the core to a vendor
+  or creating a premature provider framework. Explicit model and prompt identity make the
+  baseline interpretable. Atomic publication prevents a partial output set from looking like
+  a completed experiment.
+- **Consequences:** The optional provider dependency and credentials are needed only for a
+  real run. There are deliberately no application-level or SDK retries, concurrency,
+  hidden model selection, or fallback. The 36-case workflow therefore makes 36
+  application-level calls when every case is attempted; disabling SDK retries prevents
+  SDK-added HTTP retry attempts but does not characterize lower network layers. Setting
+  `store=False` minimizes Responses application-state retention but does not eliminate
+  default abuse-monitoring retention or establish Zero Data Retention. Prompt instructions
+  are system behaviour under test, not separate guardrail enforcement or a security
+  guarantee.
