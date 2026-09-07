@@ -9,8 +9,9 @@ complete and committed in `7b120426`. Batch B's implementation is committed in `
 Batch B is **complete**: its authorized fresh-provider run passed inspection and its
 seven-file evidence package is retained in the repository. M3, M5, M6, and M8 remain **in
 progress**. Batch C and M4 are **in progress**: implementation and all 12 completed owner
-labels are ready, but authorized real judge evidence and accepted calibration do not yet
-exist.
+labels are ready. One authorized calibration attempt produced zero valid judgements because
+the provider rejected the transmitted schema; remediation and fresh rerun authorization
+are required before calibration can continue.
 
 ## Implemented
 
@@ -116,7 +117,11 @@ exist.
   validation. Judge-error usage can be unavailable even when a failed call consumed tokens.
 - An optional OpenAI Responses semantic judge with required explicit model, strict JSON
   schema, independent parsing, completed-response enforcement, SDK retries disabled,
-  storage disabled, and exhaustive non-secret provenance.
+  storage disabled, exhaustive non-secret provenance, and transmitted output-schema
+  version `2`. Unsupported provider-level uniqueness keywords are omitted while local
+  result validation retains uniqueness enforcement.
+- Run-wide structured-output configuration rejections abort after the first attempted
+  semantic case; ordinary case-specific judge failures remain isolated.
 - A fixed, pre-label, source-ordered 12-case challenge-weighted calibration selection,
   12 strict completed owner labels (8 pass, 4 fail), an explicit partial-unblinding record,
   a future blinded worksheet, completed human-label schema, agreement/confusion analysis,
@@ -143,8 +148,8 @@ exist.
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 64 passed.
-- Complete suite after acceptance-gate remediation: 294 tests collected and 294 passed.
+- Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 70 passed.
+- Complete suite after failed-run schema remediation: 300 tests collected and 300 passed.
 - Ruff lint and format checks and `git diff --check` passed after the final implementation
   changes.
 - The fixed calibration workflow generated 12 ordered cases at raw indices 5, 8, 14, 16,
@@ -161,6 +166,13 @@ exist.
   accepted a completed provenance-bound four-row review in a second report. These fake
   outcomes are workflow evidence only and are not retained or reported as model
   measurements.
+- The first authorized `gpt-5.5-2026-04-23` calibration attempt made 12 requests with
+  `max_output_tokens=2000`, `max_retries=0`, and `store=false`. All 12 returned HTTP 400
+  `invalid_json_schema` because provider-schema version `1` included unsupported
+  `uniqueItems`; there were 0 valid judgements and 0/12 coverage. Every retained usage field
+  is null, so usage and billing are unknown. The unchanged failed semantic/report bundles
+  remain ignored under `artifacts/`, and their empty incomplete disagreement draft is not
+  review evidence. A replacement run requires fresh authorization.
 - Focused OpenAI adapter tests: 37 passed.
 - Complete test suite: 230 tests collected and 230 passed.
 - Ruff lint and format checks passed; `git diff --check` passed.
@@ -248,8 +260,8 @@ exist.
 
 ## Not implemented
 
-- an authorized real model-based judge run, completed disagreement inspection, accepted
-  calibration evidence, or the full 36-case semantic measurement;
+- a successful authorized real model-based judge run, completed disagreement inspection,
+  accepted calibration evidence, or the full 36-case semantic measurement;
 - regex and richer deterministic checks;
 - a general configurable risk-threshold language beyond the explicit Northstar policy;
 - additional providers, application or SDK retries, concurrency, dashboards, databases, or
@@ -289,6 +301,10 @@ exist.
 - Semantic judge usage is retained only on structurally valid completed judgements. A call
   that consumed tokens but ended in a provider, incomplete-response, or parsing error may
   have `usage=null`, so totals are potentially incomplete whenever judge errors exist.
+- The failed calibration attempt demonstrates that mocked structured-output tests did not
+  catch an unsupported provider-schema keyword. Version `2` removes both occurrences and
+  fail-fast handling prevents a known run-wide schema rejection from consuming the rest of
+  a future authorized case budget.
 - Dataset fingerprints validate the current stored case snapshot and detect changes, but
   mutable retained metadata and on-demand calculation mean they are not immutable
   execution-time identities. They also do not prove source authenticity or make
@@ -314,7 +330,7 @@ exist.
 
 ## Recommended next objective
 
-Obtain separate authorization for the explicit model and paid 12-call calibration judge
-run. Then produce the combined and calibration reports, classify and rationalize every
-human/judge disagreement, and obtain owner acceptance. Do not proceed to the full 36-case
-semantic measurement before that acceptance.
+Review the offline schema/fail-fast remediation, then obtain fresh authorization for an
+explicit model and paid calibration rerun into new output directories. After a successful
+full-coverage run, classify and rationalize every human/judge disagreement and obtain owner
+acceptance. Do not proceed to the full 36-case semantic measurement before that acceptance.

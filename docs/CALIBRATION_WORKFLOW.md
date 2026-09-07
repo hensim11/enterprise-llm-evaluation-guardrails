@@ -75,9 +75,9 @@ outputs. This does not rerun the customer-support model. The proposed command is
 .venv/bin/python -m llm_eval_guardrails run-openai-semantic \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
-  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge \
+  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge-rerun \
   --model MODEL_ID_TO_APPROVE \
-  --max-output-tokens 600 \
+  --max-output-tokens 2000 \
   --calibration-subset \
   --human-labels evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json \
   --guardrail-decisions evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/guardrail-decisions.json
@@ -86,6 +86,11 @@ outputs. This does not rerun the customer-support model. The proposed command is
 The command makes one application-level call per selected successful case with authored
 expected behaviour: exactly 12 for this retained set. It has no application or SDK
 retries, fallback, or concurrency, and every request sets `store=false`.
+The OpenAI transmitted output-schema provenance is version `2`; uniqueness of response
+excerpts and failure modes is enforced by local provider-neutral validation rather than by
+unsupported provider-schema keywords. A provider rejection that identifies a run-wide
+structured-output configuration defect aborts immediately after the first attempted case.
+Ordinary case-specific judge failures remain isolated.
 
 It atomically writes `semantic-evaluation.json`, `semantic-summary.json`, and
 `semantic-report.md`. The combined report carries the completed human labels and their
@@ -98,6 +103,22 @@ response was incomplete or malformed, the resulting judge-error row has `usage=n
 that call's usage may be discarded. Therefore usage totals can be incomplete when judge
 errors exist; the workflow never infers currency cost.
 
+### Preserved failed attempt
+
+The first authorized attempt on 2026-09-07 used `gpt-5.5-2026-04-23`, a 2,000-token output
+cap, and no application or SDK retries. All 12 requests were rejected with HTTP 400 because
+provider-schema version `1` transmitted unsupported `uniqueItems` keywords. It produced 0
+valid pass/fail judgements, 12 judge errors, 0/12 judgement coverage, and undefined exact
+agreement. Every usage field is `null`; usage and billing are therefore unknown, not zero.
+
+The failed semantic bundle remains unchanged under
+`artifacts/northstar-v1-guardrailed-batch-c-calibration-judge/`, with its initial report and
+empty incomplete disagreement draft under
+`artifacts/northstar-v1-guardrailed-batch-c-calibration-report/`. The empty draft is not
+completed disagreement evidence and must not be classified as such. The schema remediation
+does not authorize a replacement run: a fresh explicit model and paid-call authorization
+is required, and the rerun must use new output directories.
+
 ## Calibration report and disagreement gate
 
 First reconcile the completed labels and semantic evidence without a review artefact:
@@ -106,9 +127,9 @@ First reconcile the completed labels and semantic evidence without a review arte
 .venv/bin/python -m llm_eval_guardrails report-semantic-calibration \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
-  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge/semantic-evaluation.json \
+  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge-rerun/semantic-evaluation.json \
   evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json \
-  artifacts/northstar-v1-guardrailed-batch-c-calibration-report
+  artifacts/northstar-v1-guardrailed-batch-c-calibration-rerun-report
 ```
 
 This writes `calibration.json`, `calibration.md`, and fillable
@@ -130,10 +151,10 @@ Regenerate the calibration report with the completed review:
 .venv/bin/python -m llm_eval_guardrails report-semantic-calibration \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
-  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge/semantic-evaluation.json \
+  artifacts/northstar-v1-guardrailed-batch-c-calibration-judge-rerun/semantic-evaluation.json \
   evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json \
-  artifacts/northstar-v1-guardrailed-batch-c-calibration-reviewed \
-  --disagreement-review artifacts/northstar-v1-guardrailed-batch-c-calibration-report/disagreement-review.completed.json
+  artifacts/northstar-v1-guardrailed-batch-c-calibration-rerun-reviewed \
+  --disagreement-review artifacts/northstar-v1-guardrailed-batch-c-calibration-rerun-report/disagreement-review.completed.json
 ```
 
 Calibration reports exact agreement, disagreement and judge-error counts, judgement

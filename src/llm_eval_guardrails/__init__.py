@@ -118,6 +118,7 @@ from llm_eval_guardrails.semantic_artifact import (
 )
 from llm_eval_guardrails.semantic_evaluator import (
     SemanticJudge,
+    SemanticJudgeConfigurationError,
     SemanticJudgeRequest,
     evaluate_semantically,
 )
@@ -200,6 +201,7 @@ __all__ = [
     "SemanticEvaluationArtifact",
     "SemanticEvaluationError",
     "SemanticJudge",
+    "SemanticJudgeConfigurationError",
     "SemanticJudgeRequest",
     "SemanticJudgment",
     "SemanticOutcome",

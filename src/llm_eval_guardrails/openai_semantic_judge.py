@@ -10,13 +10,16 @@ from llm_eval_guardrails.semantic_artifact import (
     ProviderTokenUsage,
     SemanticJudgment,
 )
-from llm_eval_guardrails.semantic_evaluator import SemanticJudgeRequest
+from llm_eval_guardrails.semantic_evaluator import (
+    SemanticJudgeConfigurationError,
+    SemanticJudgeRequest,
+)
 
 _MISSING = object()
 
 OPENAI_SEMANTIC_JUDGE_ID = "openai-responses-semantic-judge"
 OPENAI_SEMANTIC_JUDGE_PROMPT_VERSION = "semantic-judge-v1"
-OPENAI_SEMANTIC_OUTPUT_SCHEMA_VERSION = "1"
+OPENAI_SEMANTIC_OUTPUT_SCHEMA_VERSION = "2"
 OPENAI_SEMANTIC_INSTRUCTIONS = "\n".join(
     (
         "You are an offline evaluator applying semantic rubric version 1.",
@@ -52,12 +55,10 @@ OPENAI_SEMANTIC_JSON_SCHEMA: dict[str, object] = {
         "response_evidence": {
             "type": "array",
             "maxItems": 3,
-            "uniqueItems": True,
             "items": {"type": "string", "minLength": 1},
         },
         "failure_modes": {
             "type": "array",
-            "uniqueItems": True,
             "items": {"type": "string", "enum": [item.value for item in FailureMode]},
         },
     },
@@ -116,21 +117,28 @@ class OpenAIResponsesSemanticJudge:
     def judge(self, request: SemanticJudgeRequest, /) -> SemanticJudgment:
         if not isinstance(request, SemanticJudgeRequest):
             raise TypeError("request must be SemanticJudgeRequest")
-        response = self._client.responses.create(
-            model=self._model,
-            instructions=OPENAI_SEMANTIC_INSTRUCTIONS,
-            input=_format_evidence(request),
-            max_output_tokens=self._max_output_tokens,
-            store=False,
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "semantic_judgement_v1",
-                    "strict": True,
-                    "schema": OPENAI_SEMANTIC_JSON_SCHEMA,
-                }
-            },
-        )
+        try:
+            response = self._client.responses.create(
+                model=self._model,
+                instructions=OPENAI_SEMANTIC_INSTRUCTIONS,
+                input=_format_evidence(request),
+                max_output_tokens=self._max_output_tokens,
+                store=False,
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "semantic_judgement_v2",
+                        "strict": True,
+                        "schema": OPENAI_SEMANTIC_JSON_SCHEMA,
+                    }
+                },
+            )
+        except Exception as error:
+            if _is_invalid_provider_schema(error):
+                raise SemanticJudgeConfigurationError(
+                    f"OpenAI rejected the run-wide structured-output schema: {error}"
+                ) from error
+            raise
         status = getattr(response, "status", None)
         if status != "completed":
             raise RuntimeError(
@@ -191,6 +199,20 @@ def _format_evidence(request: SemanticJudgeRequest) -> str:
         "observed_response": request.observed_response,
     }
     return "UNTRUSTED EVALUATION EVIDENCE:\n" + json.dumps(payload, ensure_ascii=False)
+
+
+def _is_invalid_provider_schema(error: Exception) -> bool:
+    details = " ".join(
+        str(value)
+        for value in (
+            getattr(error, "code", None),
+            getattr(error, "param", None),
+            getattr(error, "body", None),
+            error,
+        )
+        if value is not None
+    ).lower()
+    return "invalid_json_schema" in details or "invalid schema for response_format" in details
 
 
 def _extract_json_text(response: Any) -> str:

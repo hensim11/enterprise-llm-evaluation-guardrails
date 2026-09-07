@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from llm_eval_guardrails import JudgeConfidence, SemanticJudgment, SemanticOutcome
+from llm_eval_guardrails import (
+    JudgeConfidence,
+    SemanticJudgeConfigurationError,
+    SemanticJudgment,
+    SemanticOutcome,
+)
 from llm_eval_guardrails.cli import main
 
 RETAINED = Path("evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906")
@@ -235,3 +240,57 @@ def test_openai_semantic_cli_uses_fixed_subset_with_sdk_shaped_fake(
         for row in reviewed["case_trace"]
         if row["agreement_state"] == "disagree"
     } == {"judge_failure"}
+
+
+def test_openai_semantic_cli_stops_run_wide_configuration_failure_after_one_case(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = []
+
+    class FailingJudge:
+        sdk_version = "1.66.0-test"
+        provenance = {
+            "provider": "openai",
+            "api": "responses",
+            "sdk_version": sdk_version,
+            "model": "test-model",
+            "prompt_version": "semantic-judge-v1",
+            "output_schema_version": "2",
+            "max_output_tokens": 123,
+            "max_retries": 0,
+            "store": False,
+        }
+
+        def __init__(self, *, model: str, max_output_tokens: int) -> None:
+            assert model == "test-model"
+            assert max_output_tokens == 123
+
+        def judge(self, request: object) -> SemanticJudgment:
+            calls.append(request)
+            raise SemanticJudgeConfigurationError("invalid_json_schema")
+
+    monkeypatch.setattr(
+        "llm_eval_guardrails.openai_semantic_judge.OpenAIResponsesSemanticJudge",
+        FailingJudge,
+    )
+    output = tmp_path / "semantic"
+
+    with pytest.raises(SemanticJudgeConfigurationError, match="invalid_json_schema"):
+        main(
+            [
+                "run-openai-semantic",
+                str(RETAINED / "raw-run.json"),
+                str(RETAINED / "evaluated-run.json"),
+                str(output),
+                "--model",
+                "test-model",
+                "--max-output-tokens",
+                "123",
+                "--calibration-subset",
+            ]
+        )
+
+    assert len(calls) == 1
+    assert not output.exists()
+    assert not list(tmp_path.glob(".semantic.staging-*"))

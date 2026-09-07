@@ -37,6 +37,10 @@ class SemanticJudge(Protocol):
     def judge(self, request: SemanticJudgeRequest, /) -> SemanticJudgment: ...
 
 
+class SemanticJudgeConfigurationError(RuntimeError):
+    """A run-wide judge configuration defect that must not be retried per case."""
+
+
 def evaluate_semantically(
     raw_run: RunArtifact,
     judge: SemanticJudge,
@@ -103,6 +107,8 @@ def evaluate_semantically(
                     raise ValueError(
                         "judge response evidence is not an exact observed-response substring"
                     )
+        except SemanticJudgeConfigurationError:
+            raise
         except Exception as error:
             duration = perf_counter() - started
             result = SemanticCaseResult(

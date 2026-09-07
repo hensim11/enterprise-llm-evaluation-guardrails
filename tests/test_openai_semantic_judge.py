@@ -4,7 +4,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from llm_eval_guardrails import EvaluationCase, SemanticJudgeRequest, SemanticOutcome
+from llm_eval_guardrails import (
+    EvaluationCase,
+    SemanticJudgeConfigurationError,
+    SemanticJudgeRequest,
+    SemanticOutcome,
+)
 from llm_eval_guardrails.openai_semantic_judge import (
     OPENAI_SEMANTIC_INSTRUCTIONS,
     OPENAI_SEMANTIC_JSON_SCHEMA,
@@ -20,6 +25,8 @@ class FakeResponses:
 
     def create(self, **kwargs: object) -> object:
         self.calls.append(kwargs)
+        if isinstance(self.response, Exception):
+            raise self.response
         return self.response
 
 
@@ -85,7 +92,7 @@ def test_request_construction_is_strict_untrusted_and_storage_disabled() -> None
             "text": {
                 "format": {
                     "type": "json_schema",
-                    "name": "semantic_judgement_v1",
+                    "name": "semantic_judgement_v2",
                     "strict": True,
                     "schema": OPENAI_SEMANTIC_JSON_SCHEMA,
                 }
@@ -95,6 +102,77 @@ def test_request_construction_is_strict_untrusted_and_storage_disabled() -> None
     assert "untrusted" in OPENAI_SEMANTIC_INSTRUCTIONS.lower()
     assert "expected_behavior" not in str(responses.calls)
     assert "Answer safely." in str(responses.calls)
+
+
+def test_submitted_schema_uses_only_the_intended_structured_outputs_subset() -> None:
+    def keywords(schema: dict[str, object]) -> set[str]:
+        found = set(schema)
+        properties = schema.get("properties", {})
+        assert isinstance(properties, dict)
+        for child in properties.values():
+            assert isinstance(child, dict)
+            found.update(keywords(child))
+        items = schema.get("items")
+        if items is not None:
+            assert isinstance(items, dict)
+            found.update(keywords(items))
+        return found
+
+    assert "uniqueItems" not in json.dumps(OPENAI_SEMANTIC_JSON_SCHEMA)
+    assert keywords(OPENAI_SEMANTIC_JSON_SCHEMA) == {
+        "additionalProperties",
+        "enum",
+        "items",
+        "maxItems",
+        "minLength",
+        "properties",
+        "required",
+        "type",
+    }
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "outcome": "pass",
+            "confidence": "high",
+            "rationale": "Duplicate excerpt.",
+            "response_evidence": ["answer", "answer"],
+            "failure_modes": [],
+        },
+        {
+            "outcome": "fail",
+            "confidence": "high",
+            "rationale": "Duplicate failure mode.",
+            "response_evidence": ["answer"],
+            "failure_modes": ["unsupported_claim", "unsupported_claim"],
+        },
+    ],
+)
+def test_duplicates_removed_from_provider_schema_are_still_rejected_locally(
+    payload: dict[str, object],
+) -> None:
+    judge = OpenAIResponsesSemanticJudge(
+        model="model",
+        client=SimpleNamespace(responses=FakeResponses(response(json.dumps(payload)))),
+    )
+
+    with pytest.raises(ValueError, match="duplicates"):
+        judge.judge(request())
+
+
+def test_invalid_provider_schema_is_a_run_wide_configuration_error() -> None:
+    error = RuntimeError(
+        "invalid_json_schema: Invalid schema for response_format 'semantic_judgement_v2'"
+    )
+    judge = OpenAIResponsesSemanticJudge(
+        model="model",
+        client=SimpleNamespace(responses=FakeResponses(error)),
+    )
+
+    with pytest.raises(SemanticJudgeConfigurationError, match="run-wide"):
+        judge.judge(request())
 
 
 def test_strict_fail_parsing_and_usage_capture() -> None:
@@ -198,7 +276,7 @@ def test_provenance_is_exhaustive_and_non_secret() -> None:
         "sdk_version": "1.66.0",
         "model": "explicit",
         "prompt_version": "semantic-judge-v1",
-        "output_schema_version": "1",
+        "output_schema_version": "2",
         "max_output_tokens": 333,
         "max_retries": 0,
         "store": False,

@@ -16,6 +16,7 @@ from llm_eval_guardrails import (
     RunArtifact,
     SemanticCaseResult,
     SemanticEvaluationError,
+    SemanticJudgeConfigurationError,
     SemanticJudgment,
     SemanticOutcome,
     SystemProvenance,
@@ -128,19 +129,21 @@ def test_ordinary_exceptions_and_malformed_return_objects_are_isolated(returned:
     good = SemanticJudgment(SemanticOutcome.PASS, JudgeConfidence.HIGH, "Good.")
 
     class MixedJudge:
+        def __init__(self) -> None:
+            self.calls = 0
+
         def judge(self, request: object) -> object:
-            if self.calls == 0:
-                self.calls += 1
+            self.calls += 1
+            if self.calls == 1:
                 if isinstance(returned, Exception):
                     raise returned
                 return returned
             return good
 
-        calls = 0
-
+    judge = MixedJudge()
     artifact = evaluate_semantically(
         make_run(cases, (success("one"), success("two"))),
-        MixedJudge(),
+        judge,
         judge_id="fake",
     )
 
@@ -149,6 +152,24 @@ def test_ordinary_exceptions_and_malformed_return_objects_are_isolated(returned:
         SemanticOutcome.PASS,
     ]
     assert artifact.results[0].usage is None
+    assert judge.calls == 2
+
+
+def test_run_wide_configuration_failure_stops_after_first_attempted_case() -> None:
+    cases = (
+        EvaluationCase(id="one", input="one", expected_behavior="Answer."),
+        EvaluationCase(id="two", input="two", expected_behavior="Answer."),
+    )
+    judge = FixedJudge(SemanticJudgeConfigurationError("invalid_json_schema"))
+
+    with pytest.raises(SemanticJudgeConfigurationError, match="invalid_json_schema"):
+        evaluate_semantically(
+            make_run(cases, (success("one"), success("two"))),
+            judge,
+            judge_id="fake",
+        )
+
+    assert judge.calls == 1
 
 
 def test_judge_error_cannot_claim_provider_usage() -> None:
