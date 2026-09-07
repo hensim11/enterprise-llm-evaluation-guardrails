@@ -8,7 +8,9 @@ M2 — Provider-agnostic system interface and baseline runner: **complete**. Bat
 complete and committed in `7b120426`. Batch B's implementation is committed in `d72205b`.
 Batch B is **complete**: its authorized fresh-provider run passed inspection and its
 seven-file evidence package is retained in the repository. M3, M5, M6, and M8 remain **in
-progress**.
+progress**. Batch C and M4 are **in progress**: implementation and all 12 completed owner
+labels are ready, but authorized real judge evidence and accepted calibration do not yet
+exist.
 
 ## Implemented
 
@@ -102,6 +104,28 @@ progress**.
   machine-specific absolute paths and unrelated external baseline locations are rejected.
 - Atomic replay and OpenAI guardrailed CLI workflows producing raw/evaluated evidence,
   ordinary JSON/Markdown reports, decisions, and machine/human comparison reports.
+- Semantic rubric `authored-expected-behaviour` version `1`, with binary completed
+  judgements, explicit confidence semantics, exact response excerpts, and enumerated
+  material failure modes.
+- A synchronous provider-neutral semantic judge protocol and sequential full/subset
+  evaluator that preserves raw errors, uses N/A only for absent expected behaviour,
+  isolates ordinary judge failures, and propagates interrupts.
+- Separate semantic artefact schema `1` with rubric/prompt/output-schema versions, strict
+  raw provenance and ordered-index joins, explicit errors and durations, optional
+  provider-supplied token usage for valid completed judgements, and honest non-canonical
+  validation. Judge-error usage can be unavailable even when a failed call consumed tokens.
+- An optional OpenAI Responses semantic judge with required explicit model, strict JSON
+  schema, independent parsing, completed-response enforcement, SDK retries disabled,
+  storage disabled, and exhaustive non-secret provenance.
+- A fixed, pre-label, source-ordered 12-case challenge-weighted calibration selection,
+  12 strict completed owner labels (8 pass, 4 fail), an explicit partial-unblinding record,
+  a future blinded worksheet, completed human-label schema, agreement/confusion analysis,
+  and exact shared-data JSON/Markdown rendering.
+- A strict disagreement-review artefact bound to canonical semantic and human-label
+  evidence. Calibration becomes eligible for owner acceptance only with full pass/fail
+  judgement coverage, zero judge errors, and every disagreement classified and rationalized.
+- Versioned combined semantic reporting with separate raw execution, deterministic,
+  semantic, human-label, runtime-guardrail, and provider-error fields and denominators.
 
 ## Batch A closeout
 
@@ -119,6 +143,24 @@ progress**.
 ## Verification
 
 - Local interpreter: Python 3.14.0.
+- Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 64 passed.
+- Complete suite after acceptance-gate remediation: 294 tests collected and 294 passed.
+- Ruff lint and format checks and `git diff --check` passed after the final implementation
+  changes.
+- The fixed calibration workflow generated 12 ordered cases at raw indices 5, 8, 14, 16,
+  19, 20, 21, 22, 26, 27, 28, and 31. The completed-label loader validated the exact
+  retained run ID, fingerprint, case/index order, 8-pass/4-fail labels, and all non-empty
+  owner rationales. The artefact records that the original worksheet partially unblinded
+  the owner to deterministic outcomes and selection reasons. A separately generated future
+  worksheet omits both fields.
+- A deterministic offline fake judge exercised all 12 selected retained outputs with zero
+  network calls. The semantic artefact reloaded through the public strict loader; the
+  combined JSON and Markdown regenerated exactly; raw execution, deterministic, and fake
+  semantic component counts reconciled to all 12 case traces. The calibration CLI emitted
+  four disagreement drafts for the all-pass fake, rejected incomplete review evidence, and
+  accepted a completed provenance-bound four-row review in a second report. These fake
+  outcomes are workflow evidence only and are not retained or reported as model
+  measurements.
 - Focused OpenAI adapter tests: 37 passed.
 - Complete test suite: 230 tests collected and 230 passed.
 - Ruff lint and format checks passed; `git diff --check` passed.
@@ -206,7 +248,8 @@ progress**.
 
 ## Not implemented
 
-- model-based or semantic evaluators;
+- an authorized real model-based judge run, completed disagreement inspection, accepted
+  calibration evidence, or the full 36-case semantic measurement;
 - regex and richer deterministic checks;
 - a general configurable risk-threshold language beyond the explicit Northstar policy;
 - additional providers, application or SDK retries, concurrency, dashboards, databases, or
@@ -216,7 +259,11 @@ progress**.
 
 - The evaluation taxonomy and authored assertions will need review against real outputs.
 - The 38 assertions measure literal surface properties only; five cases have no applicable
-  deterministic assertion, and broader expected behaviours need future semantic evaluation.
+  deterministic assertion. The semantic path can measure broader expected behaviours, but
+  it has not yet produced authorized real-judge evidence.
+- The completed calibration labels were partially unblinded because the original worksheet
+  exposed deterministic outcomes and selection reasons. This is retained as a limitation;
+  future worksheets hide both fields.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
 - Two 36-case empirical provider runs are retained: the Batch A baseline and Batch B
@@ -239,6 +286,9 @@ progress**.
   dedicated `refusal` block. The adapter behaviour is covered by SDK-shaped offline tests.
 - Provider token usage is not retained for either empirical run, so their actual costs
   cannot be reconstructed from the evidence.
+- Semantic judge usage is retained only on structurally valid completed judgements. A call
+  that consumed tokens but ended in a provider, incomplete-response, or parsing error may
+  have `usage=null`, so totals are potentially incomplete whenever judge errors exist.
 - Dataset fingerprints validate the current stored case snapshot and detect changes, but
   mutable retained metadata and on-demand calculation mean they are not immutable
   execution-time identities. They also do not prove source authenticity or make
@@ -260,9 +310,11 @@ progress**.
   In particular, the gambling-harm and tax-evasion cases receive the generic financial
   decision block response, which does not fully satisfy their authored expectations to
   address harmful escalation, suggest support, or direct the user to qualified help.
-  Semantic evaluation of block-response quality belongs to Batch C and is not implemented.
+  Semantic evaluation of block-response quality belongs to Batch C and is not yet measured.
 
 ## Recommended next objective
 
-Batch B is closed. Batch C semantic evaluation and calibration is the next capability batch;
-no Batch C implementation has begun.
+Obtain separate authorization for the explicit model and paid 12-call calibration judge
+run. Then produce the combined and calibration reports, classify and rationalize every
+human/judge disagreement, and obtain owner acceptance. Do not proceed to the full 36-case
+semantic measurement before that acceptance.

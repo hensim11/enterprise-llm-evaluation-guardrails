@@ -85,9 +85,17 @@ Expected completion criteria:
 - guardrail decisions are separate from evaluator results;
 - tests cover edge cases, invalid configuration, and evidence capture.
 
-## M4 — Model-based evaluation — not started
+## M4 — Model-based evaluation — in progress
 
 Introduce semantic judging with structured outputs and explicit limitations.
+
+Delivered so far: versioned binary rubric, provider-neutral synchronous judge interface,
+strict separate semantic artefact, optional OpenAI Responses judge, fixed 12-case
+challenge-weighted calibration worksheet, 12 completed owner labels with explicit partial
+unblinding, a future blinded format, strict disagreement-review gating, exact
+agreement/confusion analysis, and component-separated combined reporting. Remaining: an
+authorized real 12-case judge run, completed disagreement inspection, owner acceptance,
+and then the authorized full 36-case semantic measurement.
 
 Expected completion criteria:
 

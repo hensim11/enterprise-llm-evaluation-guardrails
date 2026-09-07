@@ -3,6 +3,8 @@
 This directory is reserved for deliberately selected, tracked, non-sensitive evidence from
 authorized real experiments. Generated runs belong under the ignored `artifacts/` directory
 until every raw case, evaluated result, aggregate, and metadata field has been inspected.
+The pre-experiment calibration exception covers worksheets and deliberately retained owner
+labels derived from an already retained real run; it contains no new model measurement.
 
 Package layouts are capability-specific. A retained baseline package uses:
 
@@ -159,3 +161,21 @@ comparison attribution statement. The full case snapshot intentionally contains 
 PIN/card/canary test values; released provider outputs contain no detected synthetic-secret
 leakage. No real customer data, credential, machine-specific path, or provider usage/cost
 metadata is retained.
+
+## Batch C calibration inputs
+
+[`calibration/northstar-v1-guardrailed-batch-c-draft/`](calibration/northstar-v1-guardrailed-batch-c-draft/)
+contains the original JSON/Markdown worksheet plus
+`human-labels.completed.json`. The strict completed artefact preserves all 12 final owner
+judgements and rationales in source order: 8 pass and 4 fail. It validates against the
+retained Batch B run ID, dataset fingerprint, case IDs, raw indices, and rubric.
+
+The completed artefact explicitly records `partially_unblinded` because the original
+worksheet exposed deterministic outcomes and selection reasons. The owner judgements were
+not changed in response. The original worksheet remains visibly `draft_incomplete` and is
+still rejected as completed evidence.
+
+[`calibration/northstar-v1-guardrailed-batch-c-blinded-template/`](calibration/northstar-v1-guardrailed-batch-c-blinded-template/)
+is a future-use blank worksheet format. It includes the same required case evidence but
+omits deterministic outcomes and selection reasons from both JSON and Markdown. Neither
+directory contains a semantic judge measurement; no judge call was made.

@@ -181,3 +181,70 @@ Only architectural or methodological decisions belong here. Implementation detai
   nondeterminism can contribute. Comparison evidence is portable across machines when its
   declared bundle or repository base is preserved; unrelated external baseline locations
   are rejected rather than serialized as absolute paths.
+
+## ADR-012 — Judge authored expected behaviour with a binary case outcome
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Decision:** A completed semantic judgement is `pass` or `fail` against the case's
+  authored expected behaviour, context, references, risk category, and tags. Surface form
+  alone does not decide the result. Errors and genuinely undefined expectations remain
+  explicit, and audit excerpts must be exact retained-output substrings.
+- **Rationale:** A narrow binary question is inspectable on a small calibration set and
+  avoids inventing an unjustified continuous quality scale.
+- **Consequences:** The rubric cannot express degrees of quality. Confidence describes
+  rubric application only and must not be interpreted as system safety confidence.
+
+## ADR-013 — Retain semantic evidence separately from deterministic evaluation
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Decision:** Store semantic results in their own versioned artefact, joined to raw
+  evidence by run ID, fingerprint, case ID, raw index, and execution status. Validate
+  structure and provenance but do not claim canonical recomputation of nondeterministic
+  judge outcomes.
+- **Rationale:** Semantic judgement has different evidence, failure, cost, and
+  reproducibility properties from literal assertions.
+- **Consequences:** Reports must reconcile multiple components explicitly and retain more
+  files, while existing schema-v1 raw and deterministic evidence remains unchanged.
+
+## ADR-014 — Treat challenge-weighted calibration labels as diagnostics, not estimates
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Decision:** Fix 12 source-ordered cases before labelling: all five deterministic N/A
+  cases, all three deterministic failures, and four stratified benign/adversarial cases.
+  Do not infer or prefill owner labels and do not treat the subset as representative.
+- **Rationale:** The set concentrates the semantic gaps and known literal disagreements
+  most useful for judge review within a small paid run.
+- **Consequences:** Agreement on the subset is challenge-weighted diagnostic evidence and
+  cannot be generalized as full-run judge accuracy or system performance.
+
+## ADR-015 — Report exact small-sample agreement and confusion counts
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Decision:** Use exact agreement, disagreements, judge errors, coverage, and all four
+  binary human/judge confusion counts. Exclude judge errors from agreement denominators
+  while keeping them visible. Do not add kappa-like or composite metrics at this size.
+- **Rationale:** Direct counts are understandable and proportionate for 12 deliberately
+  selected examples; more elaborate statistics would imply unsupported precision.
+- **Consequences:** Every disagreement requires qualitative inspection and classification;
+  the human label remains a calibration reference rather than universal truth.
+
+## ADR-016 — Disclose label blinding and require provenance-bound disagreement review
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Decision:** Record whether completed human labels were blinded to deterministic
+  outcomes and selection reasons. Preserve the completed Batch C owner labels as partially
+  unblinded because the original worksheet exposed both. Future worksheets omit those
+  fields. Before calibration is eligible for owner acceptance, require one classified,
+  rationalized review for every human/judge disagreement in a strict artefact bound to the
+  semantic evidence and human labels.
+- **Rationale:** Annotation context can influence labels and must remain visible. A durable
+  exhaustive review gate prevents unresolved disagreements from being hidden in aggregate
+  agreement while protecting reviews from accidental reuse with changed evidence.
+- **Consequences:** The completed labels remain valid diagnostic evidence with an explicit
+  limitation. Calibration needs an extra review artefact whenever disagreement exists;
+  changing source evidence invalidates that review, and owner acceptance remains separate.

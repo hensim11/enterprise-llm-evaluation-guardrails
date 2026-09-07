@@ -9,6 +9,19 @@ import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
+from llm_eval_guardrails.calibration import (
+    build_blinded_calibration_worksheet,
+    build_calibration_worksheet,
+    build_disagreement_review_template,
+    calibration_case_ids,
+    calibration_report,
+    load_disagreement_review,
+    load_human_labels,
+    validate_calibration_report,
+    write_calibration_report,
+    write_calibration_worksheet,
+    write_disagreement_review_template,
+)
 from llm_eval_guardrails.comparison import (
     COMPARISON_MODE_CONFIGURATION_KEY,
     ComparisonEvidencePaths,
@@ -50,6 +63,16 @@ from llm_eval_guardrails.run_artifact import (
     write_run_artifact,
 )
 from llm_eval_guardrails.runner import run_dataset
+from llm_eval_guardrails.semantic_artifact import (
+    load_semantic_artifact,
+    write_semantic_artifact,
+)
+from llm_eval_guardrails.semantic_evaluator import evaluate_semantically
+from llm_eval_guardrails.semantic_reporting import (
+    aggregate_semantic_report,
+    validate_semantic_report,
+    write_semantic_report,
+)
 from llm_eval_guardrails.system_under_test import (
     EchoSystemUnderTest,
     SystemRequest,
@@ -104,6 +127,48 @@ def main(argv: Sequence[str] | None = None) -> int:
     guarded_openai_parser.add_argument("baseline_directory", type=Path)
     guarded_openai_parser.add_argument("output_directory", type=Path)
     guarded_openai_parser.add_argument("--run-id")
+
+    worksheet_parser = subparsers.add_parser(
+        "prepare-semantic-calibration",
+        help="create the fixed unlabelled 12-case Batch C calibration worksheet",
+    )
+    worksheet_parser.add_argument("raw_run", type=Path)
+    worksheet_parser.add_argument("deterministic_evaluation", type=Path)
+    worksheet_parser.add_argument("output_directory", type=Path)
+    worksheet_parser.add_argument("--blinded", action="store_true")
+
+    label_parser = subparsers.add_parser(
+        "validate-human-labels",
+        help="validate completed labels against the fixed retained calibration selection",
+    )
+    label_parser.add_argument("raw_run", type=Path)
+    label_parser.add_argument("deterministic_evaluation", type=Path)
+    label_parser.add_argument("human_labels", type=Path)
+
+    semantic_parser = subparsers.add_parser(
+        "run-openai-semantic",
+        help="semantically judge retained outputs with an explicit OpenAI model",
+    )
+    semantic_parser.add_argument("raw_run", type=Path)
+    semantic_parser.add_argument("deterministic_evaluation", type=Path)
+    semantic_parser.add_argument("output_directory", type=Path)
+    semantic_parser.add_argument("--model", required=True)
+    semantic_parser.add_argument("--max-output-tokens", type=int, default=600)
+    semantic_parser.add_argument("--calibration-subset", action="store_true")
+    semantic_parser.add_argument("--case-id", action="append")
+    semantic_parser.add_argument("--guardrail-decisions", type=Path)
+    semantic_parser.add_argument("--human-labels", type=Path)
+
+    calibration_parser = subparsers.add_parser(
+        "report-semantic-calibration",
+        help="reconcile completed human labels with semantic evidence",
+    )
+    calibration_parser.add_argument("raw_run", type=Path)
+    calibration_parser.add_argument("deterministic_evaluation", type=Path)
+    calibration_parser.add_argument("semantic_evaluation", type=Path)
+    calibration_parser.add_argument("human_labels", type=Path)
+    calibration_parser.add_argument("output_directory", type=Path)
+    calibration_parser.add_argument("--disagreement-review", type=Path)
     args = parser.parse_args(argv)
 
     if args.command == "run-echo":
@@ -149,6 +214,152 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             "Wrote evaluated-run.json, summary.json, and report.md atomically to "
             f"{args.output_directory}"
+        )
+        return 0
+
+    if args.command == "prepare-semantic-calibration":
+        raw_run = load_run_artifact(args.raw_run)
+        deterministic = load_evaluation_artifact(args.deterministic_evaluation, raw_run=raw_run)
+
+        def build_worksheet(stage: Path) -> None:
+            worksheet = (
+                build_blinded_calibration_worksheet(raw_run, deterministic)
+                if args.blinded
+                else build_calibration_worksheet(raw_run, deterministic)
+            )
+            write_calibration_worksheet(
+                worksheet,
+                stage / "human-labels.draft.json",
+                stage / "human-labels.draft.md",
+            )
+
+        _publish_directory(args.output_directory, build_worksheet)
+        print(
+            "Wrote an unlabelled, incomplete 12-case calibration worksheet atomically to "
+            f"{args.output_directory}"
+        )
+        return 0
+
+    if args.command == "validate-human-labels":
+        raw_run = load_run_artifact(args.raw_run)
+        deterministic = load_evaluation_artifact(args.deterministic_evaluation, raw_run=raw_run)
+        labels = load_human_labels(
+            args.human_labels,
+            raw_run=raw_run,
+            case_ids=calibration_case_ids(raw_run, deterministic),
+        )
+        print(f"Validated {len(labels.labels)} completed human labels in exact calibration order")
+        return 0
+
+    if args.command == "run-openai-semantic":
+        if args.calibration_subset and args.case_id:
+            parser.error("--calibration-subset and --case-id cannot be combined")
+        raw_run = load_run_artifact(args.raw_run)
+        deterministic = load_evaluation_artifact(args.deterministic_evaluation, raw_run=raw_run)
+        guardrails = (
+            None
+            if args.guardrail_decisions is None
+            else load_guardrail_artifact(args.guardrail_decisions, raw_run=raw_run)
+        )
+        if args.calibration_subset:
+            selected_ids = calibration_case_ids(raw_run, deterministic)
+        elif args.case_id:
+            selected_ids = tuple(args.case_id)
+        else:
+            selected_ids = None
+        human_labels = (
+            None
+            if args.human_labels is None
+            else load_human_labels(
+                args.human_labels,
+                raw_run=raw_run,
+                case_ids=calibration_case_ids(raw_run, deterministic),
+            )
+        )
+        from llm_eval_guardrails.openai_semantic_judge import (
+            OPENAI_SEMANTIC_JUDGE_ID,
+            OpenAIResponsesSemanticJudge,
+        )
+
+        judge = OpenAIResponsesSemanticJudge(
+            model=args.model,
+            max_output_tokens=args.max_output_tokens,
+        )
+
+        def build_semantic(stage: Path) -> None:
+            semantic = evaluate_semantically(
+                raw_run,
+                judge,
+                judge_id=OPENAI_SEMANTIC_JUDGE_ID,
+                judge_configuration=judge.provenance,
+                case_ids=selected_ids,
+            )
+            semantic_path = stage / "semantic-evaluation.json"
+            write_semantic_artifact(semantic, semantic_path)
+            persisted = load_semantic_artifact(semantic_path, raw_run=raw_run)
+            report = aggregate_semantic_report(
+                raw_run,
+                deterministic,
+                persisted,
+                human_labels=human_labels,
+                guardrails=guardrails,
+            )
+            json_path = stage / "semantic-summary.json"
+            markdown_path = stage / "semantic-report.md"
+            write_semantic_report(report, json_path, markdown_path)
+            validate_semantic_report(report, json_path, markdown_path)
+
+        _publish_directory(args.output_directory, build_semantic)
+        print(
+            "Wrote semantic-evaluation.json, semantic-summary.json, and semantic-report.md "
+            f"atomically to {args.output_directory}"
+        )
+        return 0
+
+    if args.command == "report-semantic-calibration":
+        raw_run = load_run_artifact(args.raw_run)
+        deterministic = load_evaluation_artifact(args.deterministic_evaluation, raw_run=raw_run)
+        semantic = load_semantic_artifact(args.semantic_evaluation, raw_run=raw_run)
+        labels = load_human_labels(
+            args.human_labels,
+            raw_run=raw_run,
+            case_ids=tuple(result.case_id for result in semantic.results),
+        )
+        disagreement_review = (
+            None
+            if args.disagreement_review is None
+            else load_disagreement_review(
+                args.disagreement_review,
+                raw_run=raw_run,
+                semantic=semantic,
+                human=labels,
+            )
+        )
+
+        def build_calibration_report(stage: Path) -> None:
+            report = calibration_report(
+                raw_run,
+                deterministic,
+                semantic,
+                labels,
+                disagreement_review,
+            )
+            json_path = stage / "calibration.json"
+            markdown_path = stage / "calibration.md"
+            write_calibration_report(report, json_path, markdown_path)
+            validate_calibration_report(report, json_path, markdown_path)
+            if disagreement_review is None:
+                template = build_disagreement_review_template(raw_run, semantic, labels)
+                write_disagreement_review_template(
+                    template,
+                    stage / "disagreement-review.draft.json",
+                    stage / "disagreement-review.draft.md",
+                )
+
+        _publish_directory(args.output_directory, build_calibration_report)
+        print(
+            "Wrote reconciled calibration evidence and, when review evidence was not "
+            f"supplied, a disagreement-review draft to {args.output_directory}"
         )
         return 0
 

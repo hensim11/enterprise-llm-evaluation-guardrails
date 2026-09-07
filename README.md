@@ -10,7 +10,10 @@ core contracts remain provider-agnostic.
 > **Current status:** Milestones M0, M1, and M2 and capability Batches A and B are complete.
 > The repository retains both the measured baseline and the measured fresh-provider
 > guardrail comparison, with runtime decisions kept separate from deterministic evaluation.
-> Semantic evaluation is not implemented.
+> Batch C's semantic implementation and all 12 final owner labels are ready. The labels
+> are explicitly recorded as partially unblinded because the original worksheet exposed
+> deterministic outcomes and selection reasons. No real judge measurement exists yet, so
+> Batch C and M4 remain incomplete.
 
 ## Why this project exists
 
@@ -120,12 +123,52 @@ Install `.[dev,openai]` only when preparing an authorized OpenAI run.
 - representative fixtures and an illustrative example dataset;
 - a milestone roadmap with verification criteria;
 - test, lint, and continuous-integration configuration; and
-- an explicit record of architectural decisions.
+- an explicit record of architectural decisions;
+- a versioned binary semantic rubric and provider-neutral synchronous judge contract;
+- a strict, separately joined semantic artefact with exact response excerpts, explicit
+  failures, confidence, completed-judgement token usage when supplied, and ordered
+  full/subset evaluation; judge-error calls may have unavailable usage;
+- an optional OpenAI Responses semantic judge with strict JSON, explicit model,
+  `max_retries=0`, `store=false`, and non-secret provenance;
+- a fixed, source-ordered 12-case challenge-weighted calibration workflow, strict completed
+  owner-label evidence, explicit blinding conditions, and a future blinded worksheet; and
+- calibration and combined semantic reports that keep execution, deterministic, semantic,
+  human, and runtime guardrail components visible without a composite score, plus a
+  provenance-bound disagreement-review acceptance gate.
 
 Sections that describe the case schema, system interface, runner, raw/evaluated artefacts,
 guardrails, and reporting document implemented capability. Reviewed provider-backed
 evidence is retained separately for the four-file Batch A baseline and seven-file Batch B
 guardrail comparison.
+
+## Semantic evaluation and calibration gate
+
+Batch C evaluates retained raw outputs offline; it never supplies expected answers to the
+runtime system and does not use semantic outcomes for runtime enforcement. The rubric,
+artefact, and calibration workflow are documented in the
+[semantic rubric](docs/SEMANTIC_RUBRIC.md),
+[semantic artefact specification](docs/SEMANTIC_ARTIFACT_SPEC.md), and
+[calibration workflow](docs/CALIBRATION_WORKFLOW.md).
+
+Create a future blinded 12-case owner worksheet without a provider call:
+
+```bash
+python -m llm_eval_guardrails prepare-semantic-calibration \
+  evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
+  evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
+  /path/to/new-calibration-worksheet-directory \
+  --blinded
+```
+
+The fixed subset contains all five deterministic N/A cases, all three deterministic
+failures, and four preselected stratified cases. It is deliberately challenge-weighted,
+not representative, and not an estimator of overall performance. The completed artefact
+contains 8 owner passes and 4 owner failures in exact retained order; it records partial
+unblinding without altering the judgements. A draft worksheet cannot load as completed
+label evidence. Every future human/judge disagreement requires a classification and
+rationale in a validated review artefact before calibration is eligible for owner
+acceptance. A real judge run requires separate explicit model/spend authorization; no such
+run or semantic measurement is retained yet.
 
 ## Measured Batch B guardrail comparison
 
@@ -401,8 +444,10 @@ Only fictional and synthetic benchmark data is sent.
 - Deterministic string checks have narrow literal coverage and cannot establish semantic
   correctness, safety, groundedness, privacy, or injection resistance.
 - Guardrails are narrow regex/phrase/digit-shape rules, not semantic understanding, a broad
-  PII catalogue, redaction, or a security guarantee. No model-based judge, semantic score,
-  regex assertion, dashboard, or second provider is implemented.
+  PII catalogue, redaction, or a security guarantee. A model-based judge implementation
+  exists, and owner labels are retained, but no authorized real judge measurement or
+  accepted calibration has occurred.
+  No regex assertion, dashboard, or second provider is implemented.
 - The runner is sequential and has no application or SDK retries, resume support, or
   concurrency.
 - Run provenance supports case reconstruction and change detection but does not guarantee
@@ -418,7 +463,8 @@ Only fictional and synthetic benchmark data is sent.
   robustness, accuracy, safety, privacy, or security claims.
 - Provider token usage was not retained, so actual run cost cannot be reconstructed from
   the evidence.
-- The measurement design will need calibration against labelled examples once model-based judging is introduced.
+- The completed labels were partially unblinded to deterministic outcomes and selection
+  reasons; this is disclosed and limits later agreement claims.
 
 ## Working principles
 
