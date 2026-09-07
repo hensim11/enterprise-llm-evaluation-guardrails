@@ -1,14 +1,14 @@
 # Project State
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 ## Current milestone
 
 M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A is
-complete and committed in `7b120426`. Batch B's implementation and offline acceptance
-evidence are ready, but its real guardrailed provider run remains pending explicit
-credentials/spend authorization, so Batch B is not yet measured or complete. M3, M5, M6,
-and M8 remain **in progress**.
+complete and committed in `7b120426`. Batch B's implementation is committed in `d72205b`.
+Batch B is **complete**: its authorized fresh-provider run passed inspection and its
+seven-file evidence package is retained in the repository. M3, M5, M6, and M8 remain **in
+progress**.
 
 ## Implemented
 
@@ -109,6 +109,13 @@ and M8 remain **in progress**.
   the review and validation gates. The four-file evidence package is retained under
   `evidence/baselines/northstar-v1-gpt-5.4-mini-2026-03-17-20260905/`.
 
+## Batch B closeout
+
+- Batch B implementation, documentation, one authorized 27-request provider execution,
+  artefact inspection, and relocation validation passed the acceptance gates. The unchanged
+  seven-file evidence package is retained under
+  `evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/`.
+
 ## Verification
 
 - Local interpreter: Python 3.14.0.
@@ -128,7 +135,7 @@ and M8 remain **in progress**.
   structure, distinct output-text/refusal blocks, and client `max_retries` surfaces used
   here. Mocked tests prove ordered text/refusal preservation, malformed-content rejection,
   `max_retries=0`, `store=False`, completed-only success, and SDK-version provenance.
-- One explicitly authorized run used `gpt-5.4-mini-2026-03-17`, SDK 1.66.0,
+- The explicitly authorized Batch A baseline used `gpt-5.4-mini-2026-03-17`, SDK 1.66.0,
   `northstar-bank-assistant-v1`, `ordered-context-v1`, `max_retries=0`, `store=False`, and
   a maximum of 800 output tokens for each of 36 sequential application-level requests.
   The credential was supplied through the process environment and was not copied into
@@ -164,6 +171,38 @@ and M8 remain **in progress**.
   measurement. The regenerated comparison declared `deterministic_replay`, retained no
   machine-specific absolute paths in JSON or Markdown, and all five evidence references
   resolved from their declared repository or bundle bases.
+- One explicitly authorized Batch B run used `gpt-5.4-mini-2026-03-17`, SDK 1.66.0,
+  `northstar-bank-assistant-v1`, `ordered-context-v1`, `max_retries=0`, `store=False`, and
+  a maximum of 800 output tokens. Nine deterministic input blocks limited the run to 27
+  sequential application-level provider requests. All 27 completed; there were no
+  provider execution errors, application retries, SDK retries, fallbacks, or additional
+  attempts. The complete atomically published bundle is retained unchanged under
+  `evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/`.
+- The empirical bundle contains 36 successful externally observed raw results, 36
+  guardrail decisions, 36 deterministic case results, 38 assertion results, and 36
+  comparison trace rows for the unchanged fingerprint. Guardrail decisions were 24 PASS,
+  3 WARN, and 9 BLOCK. All nine blocks were input-stage blocks, so nine provider
+  invocations were directly avoided; the response-leakage detector triggered zero times
+  and no candidate response was withheld or replaced.
+- Empirical deterministic outcomes were 28 pass, 3 fail, 0 error, and 5 not applicable at
+  case level, with 35 pass, 3 fail, and 0 error across 38 assertions (92.1% assertion pass
+  rate and 100% assertion-evaluation coverage). Against the retained baseline this is one
+  fewer pass and one more fail at both case and assertion level: 28 pass→pass, one
+  pass→fail, two fail→fail, and five not-applicable→not-applicable transitions. The new
+  pass→fail is the directly input-blocked unclassified mortgage-eligibility case; the
+  fraud-refund and password-safety literal failures were already present in the baseline.
+- Empirical benign false refusals were 0/18 and benign warnings were 0/18. Adversarial
+  decisions were 8 BLOCK, 3 WARN, and 2 PASS; five cases were unclassified. These are
+  policy observations, not an accuracy score. Of the 27 released provider outputs, 21
+  differed textually from their retained baseline counterparts despite unchanged aggregate
+  literal outcomes for provider-invoked cases, illustrating the documented nondeterminism
+  confound.
+- Canonical loaders and render validators accepted all seven empirical files. The
+  comparison declared `fresh_provider_execution`, separated directly attributable
+  input-block avoidance from observational/confounded PASS/WARN outputs and deltas, and
+  used five resolving portable evidence references. Direct screening found no credential
+  value or name, local username, `.env` reference, absolute filesystem path, or generic API
+  key pattern in the bundle.
 
 ## Not implemented
 
@@ -180,23 +219,26 @@ and M8 remain **in progress**.
   deterministic assertion, and broader expected behaviours need future semantic evaluation.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
-- One 36-case empirical run exists, but a single finite run with literal assertions cannot
-  establish model quality, robustness, safety, privacy, groundedness, or security beyond
-  the recorded observations.
+- Two 36-case empirical provider runs are retained: the Batch A baseline and Batch B
+  guardrailed comparison. These finite runs and literal assertions cannot establish model
+  quality, robustness, safety, privacy, groundedness, or security beyond the recorded
+  observations.
 - Run artefacts intentionally retain complete case specifications, outputs, and error
   messages and may therefore require sensitive-data handling. Configuration safety is
   caller-controlled; there is no automatic secret detection or redaction.
 - `store=False` minimizes Responses API application-state retention but does not disable
   provider abuse-monitoring retention or establish Zero Data Retention. The benchmark is
   synthetic; real customer data remains out of scope.
-- Five successful cases have no deterministic assertions and remain explicitly not
-  applicable rather than semantically assessed. The two deterministic failures are literal
-  phrase mismatches and require interpretation alongside their case-level evidence.
+- In the baseline, two of 38 assertions failed. In the guardrailed run, three of 38 failed:
+  the same fraud-refund and password-safety literal phrase mismatches plus the
+  `unsupported-mortgage-eligibility` pass→fail transition caused by its input-block text.
+  Five successful cases in each run have no deterministic assertions and remain explicitly
+  not applicable rather than semantically assessed.
 - Provider content-block types are not retained in raw artefact schema v1, so the evidence
   preserves refusal-like output text but cannot establish whether the provider emitted a
   dedicated `refusal` block. The adapter behaviour is covered by SDK-shaped offline tests.
-- Provider token usage is not retained, so actual cost cannot be reconstructed without an
-  additional provider request, which was not authorized or made.
+- Provider token usage is not retained for either empirical run, so their actual costs
+  cannot be reconstructed from the evidence.
 - Dataset fingerprints validate the current stored case snapshot and detect changes, but
   mutable retained metadata and on-demand calculation mean they are not immutable
   execution-time identities. They also do not prove source authenticity or make
@@ -209,12 +251,18 @@ and M8 remain **in progress**.
   match without separately retaining the candidate.
 - The deterministic replay isolates policy effects over retained outputs but is not a fresh
   provider run and cannot measure new model/guardrail interaction or nondeterminism.
-- A future fresh-provider comparison can directly attribute avoided invocations to input
+- The inspected fresh-provider comparison directly attributes avoided invocations to input
   blocks, but its PASS/WARN outputs, outcome transitions, and metric deltas can also reflect
-  provider/model nondeterminism and must remain labelled observational.
+  provider/model nondeterminism and remain labelled observational. The artefacts do not
+  include transport logs or a retry counter; the no-SDK-retry claim is grounded in the
+  committed adapter's `max_retries=0` construction and the verified live client setting.
+- Batch B BLOCK results are policy-decision observations, not semantic correctness scores.
+  In particular, the gambling-harm and tax-evasion cases receive the generic financial
+  decision block response, which does not fully satisfy their authored expectations to
+  address harmful escalation, suggest support, or direct the user to qualified help.
+  Semantic evaluation of block-response quality belongs to Batch C and is not implemented.
 
 ## Recommended next objective
 
-After explicit owner authorization, execute and inspect the real Batch B guardrailed run
-against the exact retained model snapshot and unchanged benchmark. Retain evidence only
-after raw outputs, decisions, comparisons, credentials, and published claims pass review.
+Batch B is closed. Batch C semantic evaluation and calibration is the next capability batch;
+no Batch C implementation has begun.
