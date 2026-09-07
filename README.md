@@ -7,10 +7,10 @@ This gives the evaluation work a realistic, risk-sensitive setting without imply
 access to real customer data, bank systems, or confidential policies. The framework's
 core contracts remain provider-agnostic.
 
-> **Current status:** Milestones M0, M1, and M2 and the first measured capability batch are
-> complete. The repository now includes deterministic evaluation, reconciled reporting, a
-> versioned fictional-bank benchmark, an OpenAI Responses adapter, and retained empirical
-> baseline evidence. Guardrail enforcement and semantic evaluation are not implemented.
+> **Current status:** Milestones M0, M1, and M2 and capability Batches A and B are complete.
+> The repository retains both the measured baseline and the measured fresh-provider
+> guardrail comparison, with runtime decisions kept separate from deterministic evaluation.
+> Semantic evaluation is not implemented.
 
 ## Why this project exists
 
@@ -36,6 +36,9 @@ Raw run records -> Evaluators --------------+
        v
 Aggregation and reports -> risk policy decisions (separate enforcement layer)
 ```
+
+Runtime guardrails wrap only the system request/candidate-response boundary. Their decisions
+remain in a dedicated artefact and never become deterministic evaluation outcomes.
 
 The architecture is intentionally local-first and provider-agnostic. Early milestones favour simple Python interfaces and files over services, databases, or orchestration frameworks.
 
@@ -106,6 +109,13 @@ Install `.[dev,openai]` only when preparing an authorized OpenAI run.
 - a versioned 36-case fictional Northstar Bank benchmark with adversarial and benign
   paired controls;
 - offline re-evaluation and atomic end-to-end output-bundle commands;
+- narrow versioned input BLOCK, input WARN, and response BLOCK detectors with explicit
+  precedence and versioned replacement responses;
+- one separate, canonically joined guardrail decision per case;
+- matched baseline-to-guardrailed JSON/Markdown comparison with false-refusal,
+  adversarial-decision, detector-trigger, invocation-avoidance, transition, and case-trace
+  evidence;
+- atomic deterministic-replay and provider-backed guardrailed workflows;
 - a local synthetic echo-run command requiring no provider credentials;
 - representative fixtures and an illustrative example dataset;
 - a milestone roadmap with verification criteria;
@@ -113,8 +123,35 @@ Install `.[dev,openai]` only when preparing an authorized OpenAI run.
 - an explicit record of architectural decisions.
 
 Sections that describe the case schema, system interface, runner, raw/evaluated artefacts,
-and reporting document implemented capability. One reviewed provider-backed baseline is
-retained as evidence.
+guardrails, and reporting document implemented capability. Reviewed provider-backed
+evidence is retained separately for the four-file Batch A baseline and seven-file Batch B
+guardrail comparison.
+
+## Measured Batch B guardrail comparison
+
+Batch B keeps benchmark specification, externally observed raw output, deterministic
+evaluation, and guardrail/comparison decisions distinct. Its retained fresh-provider run
+used the same 36-case benchmark and fingerprint
+`6e6c9f92825f2ab266521180968f3eeb6341df7e0acd448916dac670bed0d698`.
+
+Nine deterministic input blocks directly avoided provider invocation, leaving 27 provider
+requests; all 27 completed successfully and their candidates were released. Decisions were
+24 PASS, 3 WARN, and 9 BLOCK, with no response-detector triggers or response replacements.
+Of the 27 released outputs, 21 differed textually from the retained baseline.
+
+The baseline passed 36/38 literal assertions; the guardrailed run passed 35/38. The only
+evaluation transition was `unsupported-mortgage-eligibility`, pass → fail, because its
+input-block response does not contain the benchmark's insufficient-information phrase.
+Input-block avoidance is directly attributable to the guardrail. Differences involving
+freshly generated PASS/WARN responses remain observational and potentially confounded by
+provider/model nondeterminism. BLOCK totals are policy-decision observations, not accuracy
+or proof of general safety effectiveness.
+
+See the [retained Batch B evidence bundle](evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/)
+and its [observational comparison report](evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/comparison.md).
+See the [Batch B workflow](docs/GUARDRAIL_WORKFLOW.md), [policy](docs/GUARDRAIL_POLICY.md),
+[decision artefact](docs/GUARDRAIL_ARTIFACT_SPEC.md), and
+[comparison artefact](docs/GUARDRAIL_COMPARISON_SPEC.md).
 
 ## Measured Batch A baseline
 
@@ -335,18 +372,37 @@ the baseline system, not a runtime guardrail or security guarantee. Benchmark co
 credential handling, reproduction, and evidence-retention review are documented in the
 [baseline workflow](docs/BASELINE_WORKFLOW.md).
 
-The command makes 36 application-level calls if every case is attempted. Disabling SDK
-retries prevents automatic retry HTTP attempts by the SDK; no application retries or
-fallbacks exist. `store=False` minimizes Responses application-state retention, but does
-not remove default provider abuse-monitoring retention or confer account-level Zero Data
-Retention. Only fictional and synthetic benchmark data is sent.
+The matched Batch B provider command deliberately derives the exact model snapshot and
+request configuration from that retained baseline rather than accepting a substitute:
+
+```bash
+python -m llm_eval_guardrails run-openai-guardrailed \
+  benchmarks/northstar_bank_v1.jsonl \
+  evidence/baselines/northstar-v1-gpt-5.4-mini-2026-03-17-20260905 \
+  /path/to/new-guardrailed-bundle \
+  --run-id RUN_ID
+```
+
+Do not run it until credentials and provider spend have been explicitly authorized.
+
+The command derives `fresh_provider_execution` from the workflow and emits portable,
+explicitly based evidence references. Fresh-provider comparison titles and attribution
+language do not imply that all observed deltas are caused by guardrails.
+
+The baseline command makes 36 application-level calls if every case is attempted; the
+guardrailed command makes one call only for each input-allowed case. Disabling SDK retries
+prevents automatic retry HTTP attempts by the SDK; no application retries or fallbacks
+exist. `store=False` minimizes Responses application-state retention, but does not remove
+default provider abuse-monitoring retention or confer account-level Zero Data Retention.
+Only fictional and synthetic benchmark data is sent.
 
 ## Limitations
 
 - Deterministic string checks have narrow literal coverage and cannot establish semantic
   correctness, safety, groundedness, privacy, or injection resistance.
-- No guardrail enforcement, policy decision, model-based judge, semantic score, regex
-  assertion, dashboard, or second provider is implemented.
+- Guardrails are narrow regex/phrase/digit-shape rules, not semantic understanding, a broad
+  PII catalogue, redaction, or a security guarantee. No model-based judge, semantic score,
+  regex assertion, dashboard, or second provider is implemented.
 - The runner is sequential and has no application or SDK retries, resume support, or
   concurrency.
 - Run provenance supports case reconstruction and change detection but does not guarantee
@@ -358,8 +414,8 @@ Retention. Only fictional and synthetic benchmark data is sent.
   information. The runner performs no automatic redaction.
 - Schema v1 has no migration utility; future loaders can dispatch on the required
   `schema_version` without changing v1 data.
-- The retained result is one finite observation and does not support general robustness,
-  accuracy, safety, privacy, or security claims.
+- Each retained run is one finite observation; together they do not support general
+  robustness, accuracy, safety, privacy, or security claims.
 - Provider token usage was not retained, so actual run cost cannot be reconstructed from
   the evidence.
 - The measurement design will need calibration against labelled examples once model-based judging is introduced.

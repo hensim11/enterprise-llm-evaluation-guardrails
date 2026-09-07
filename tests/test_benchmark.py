@@ -1,10 +1,22 @@
+import json
 from collections import Counter
 from pathlib import Path
 
-from llm_eval_guardrails import AssertionType, load_dataset
+from llm_eval_guardrails import (
+    AssertionType,
+    DatasetProvenance,
+    EchoSystemUnderTest,
+    load_dataset,
+    run_guardrailed_dataset,
+)
+from llm_eval_guardrails.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "benchmarks" / "northstar_bank_v1.jsonl"
+EXPECTED_FINGERPRINT = "6e6c9f92825f2ab266521180968f3eeb6341df7e0acd448916dac670bed0d698"
+RETAINED_BASELINE = (
+    ROOT / "evidence" / "baselines" / "northstar-v1-gpt-5.4-mini-2026-03-17-20260905"
+)
 
 
 def test_benchmark_has_stable_unique_fictional_cases_and_assertions() -> None:
@@ -19,6 +31,7 @@ def test_benchmark_has_stable_unique_fictional_cases_and_assertions() -> None:
     assert all(case.expected_behavior for case in cases)
     assert {assertion.type for case in cases for assertion in case.assertions} == set(AssertionType)
     assert any(not case.assertions for case in cases)
+    assert DatasetProvenance(str(BENCHMARK), tuple(cases)).fingerprint == EXPECTED_FINGERPRINT
 
 
 def test_benchmark_covers_required_scenarios_and_risk_categories() -> None:
@@ -61,3 +74,68 @@ def test_benchmark_contains_no_real_customer_or_bank_framing() -> None:
     assert '"fictional":true' in text
     for prohibited in ("Barclays", "HSBC", "NatWest", "Santander", "real customer"):
         assert prohibited not in text
+
+
+def test_guardrails_produce_one_explainable_decision_per_unchanged_benchmark_case() -> None:
+    raw, decisions = run_guardrailed_dataset(
+        BENCHMARK,
+        EchoSystemUnderTest(),
+        system_id="synthetic-echo-guardrailed",
+        run_id="benchmark-guardrail-test",
+    )
+
+    assert raw.dataset.fingerprint == EXPECTED_FINGERPRINT
+    assert len(raw.results) == len(decisions.decisions) == 36
+    assert [result.case_id for result in raw.results] == [
+        decision.case_id for decision in decisions.decisions
+    ]
+    assert sum(not decision.underlying_model_invoked for decision in decisions.decisions) == 9
+    assert sum(decision.candidate_response_replaced for decision in decisions.decisions) == 1
+    assert all(decision.explanation for decision in decisions.decisions)
+
+
+def test_retained_baseline_replay_preserves_verified_comparison_metrics(tmp_path: Path) -> None:
+    output = tmp_path / "replay"
+
+    assert (
+        main(
+            [
+                "run-guardrailed-replay",
+                str(BENCHMARK),
+                str(RETAINED_BASELINE),
+                str(output),
+                "--run-id",
+                "verified-replay-test",
+            ]
+        )
+        == 0
+    )
+
+    comparison = json.loads((output / "comparison.json").read_text(encoding="utf-8"))
+    assert comparison["source"]["baseline"]["dataset_fingerprint"] == EXPECTED_FINGERPRINT
+    assert comparison["matched_cases"]["count"] == 36
+    assert comparison["guardrails"]["decision_counts"] == {
+        "pass": 24,
+        "warn": 3,
+        "block": 9,
+    }
+    assert comparison["guardrails"]["underlying_model_invocations_avoided"] == 9
+    assert comparison["deterministic_deltas"]["baseline"]["case_outcomes"] == {
+        "pass": 29,
+        "fail": 2,
+        "error": 0,
+        "not_applicable": 5,
+    }
+    assert comparison["deterministic_deltas"]["guardrailed"]["case_outcomes"] == {
+        "pass": 28,
+        "fail": 3,
+        "error": 0,
+        "not_applicable": 5,
+    }
+    assert comparison["deterministic_deltas"]["assertion_outcome_delta"] == {
+        "pass": -1,
+        "fail": 1,
+        "error": 0,
+    }
+    assert comparison["classification"]["benign"]["false_refusals"]["denominator"] == 18
+    assert comparison["classification"]["benign"]["false_refusals"]["numerator"] == 0

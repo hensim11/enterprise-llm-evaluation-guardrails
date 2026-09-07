@@ -73,8 +73,10 @@ Expected completion criteria:
 Add objective checks and a distinct enforcement interface.
 
 Delivered so far: literal exact-match, contains, and not-contains evaluation with explicit
-outcomes, canonical evidence reconciliation, and tests. Remaining milestone work includes
-regex or other justified checks and the separate guardrail enforcement interface.
+outcomes and canonical evidence reconciliation, plus a separate versioned runtime guardrail
+interface with PASS/WARN/BLOCK precedence, request/response detectors, block responses, and
+decision evidence. Remaining milestone work includes regex or other justified evaluation
+checks.
 
 Expected completion criteria:
 
@@ -100,9 +102,9 @@ Expected completion criteria:
 Build versioned cases for injection, leakage, unsafe compliance, refusal failures, and bypass attempts.
 
 Delivered so far: a versioned fictional-bank benchmark with adversarial cases, declared
-benign pairs, risk labels, expected behaviours, narrow literal assertions, and one retained
-real baseline result. Remaining milestone work includes a regression-case process informed
-by discovered failures.
+benign pairs, risk labels, expected behaviours, narrow literal assertions, and retained
+baseline and guardrailed provider evidence. Remaining milestone work includes a
+regression-case process informed by discovered failures.
 
 Expected completion criteria:
 
@@ -115,9 +117,11 @@ Expected completion criteria:
 
 Turn case-level evidence into transparent summaries and configurable decisions.
 
-Delivered so far: reconciled aggregation and shared machine/human report generation with
-explicit errors, denominators, coverage, category breakdowns, and case traceability.
-Configurable thresholds, precedence, and enforcement decisions remain unimplemented.
+Delivered so far: reconciled aggregation and shared machine/human evaluation reports, plus
+matched guardrail comparison reports with explicit classification denominators, detector
+counts/stages, configuration differences, transitions, case traces, workflow-derived replay
+or fresh-provider attribution, and portable evidence references. Runtime guardrail
+precedence is explicit; a general configurable risk-threshold policy remains unimplemented.
 
 Expected completion criteria:
 
@@ -142,9 +146,10 @@ Expected completion criteria:
 Consolidate measured experiments into defensible findings and portfolio evidence. Real
 experiments are pulled forward into the fast-track batches rather than deferred until M8.
 
-Delivered so far: retained Batch A empirical evidence, reconciled deterministic metrics,
-and a concise README summary linked to case-level evidence. Remaining work includes deeper
-interpretation, final portfolio presentation, and an interview-ready walkthrough.
+Delivered so far: retained Batch A and Batch B empirical evidence, reconciled deterministic
+and guardrail-comparison metrics, and a concise README summary linked to case-level evidence.
+Remaining work includes deeper interpretation, final portfolio presentation, and an
+interview-ready walkthrough.
 
 Expected completion criteria:
 
