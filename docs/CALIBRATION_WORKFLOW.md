@@ -66,22 +66,24 @@ Validate the completed retained labels offline before any judge run:
   evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json
 ```
 
-## Authorized 12-call judge gate
+## Completed authorized 12-call judge gate
 
-Only after separate model and provider-spend authorization, judge the same 12 retained
-outputs. This does not rerun the customer-support model. The proposed command is:
+The separately authorized replacement run judged the same 12 retained outputs without
+rerunning the customer-support model. Its exact command was:
 
 ```bash
 .venv/bin/python -m llm_eval_guardrails run-openai-semantic \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
   evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
   artifacts/northstar-v1-guardrailed-batch-c-calibration-judge-rerun \
-  --model MODEL_ID_TO_APPROVE \
+  --model gpt-5.5-2026-04-23 \
   --max-output-tokens 2000 \
   --calibration-subset \
   --human-labels evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json \
   --guardrail-decisions evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/guardrail-decisions.json
 ```
+
+Do not repeat this historical paid command without fresh explicit authorization.
 
 The command makes one application-level call per selected successful case with authored
 expected behaviour: exactly 12 for this retained set. It has no application or SDK
@@ -167,10 +169,57 @@ evidence. Eligibility for owner acceptance requires both of these independent ga
    validated, completed provenance-bound review artefact.
 
 Completing disagreement reviews cannot compensate for a judge error or partial coverage.
-Likewise, full coverage cannot compensate for an unresolved disagreement. The report never
-marks `owner_accepted=true`; acceptance remains an explicit owner decision. A material
-rubric change requires owner approval and a new rubric version. Do not run all 36 cases
-until the owner accepts the inspected calibration evidence.
+Likewise, full coverage cannot compensate for an unresolved disagreement. The computed
+report never marks `owner_accepted=true`; acceptance remains an explicit external owner
+decision. A material rubric change requires owner approval and a new rubric version.
+
+For this run, all 12 judgements completed with zero judge errors and 10/12 exact agreement.
+The owner reviewed both disagreements, retaining `judge_failure` for
+`support-travel-notice-guidance` and `human_label_ambiguity` for
+`unsupported-fraud-refund-guarantee`, then accepted the calibration on 2026-09-07.
+The separate schema-v1 `owner-acceptance.json` binds that decision to canonical hashes of
+the exact reviewed calibration report and completed disagreement review, records the
+observed 10/12 result, and acknowledges the challenge-weighted, non-representative,
+partially-unblinded, non-ground-truth limitations. The accepted six-file package is retained
+under
+`evidence/calibration/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/`.
+This closed the calibration gate but did not itself authorize the full 36-case semantic
+measurement.
+
+## Subsequent full semantic measurement
+
+After separate explicit authorization, the accepted configuration was applied once to all
+36 retained Batch B outputs. The run made no customer-support system calls and produced 36
+completed semantic judgements: 33 pass, 3 fail, 0 error, 0 N/A, and 100% judgement
+coverage. Complete retained usage was 16,266 input, 5,068 output, and 21,334 total tokens.
+The reviewed three-file bundle is retained under
+`evidence/semantic/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/`.
+
+The exact historical command was:
+
+```bash
+.venv/bin/python -m llm_eval_guardrails run-openai-semantic \
+  evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/raw-run.json \
+  evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/evaluated-run.json \
+  artifacts/northstar-v1-guardrailed-batch-c-semantic-full-gpt-5.5-2026-04-23-20260907 \
+  --model gpt-5.5-2026-04-23 \
+  --max-output-tokens 2000 \
+  --guardrail-decisions evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/guardrail-decisions.json \
+  --human-labels evidence/calibration/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/human-labels.completed.json
+```
+
+Do not repeat this paid command without separate explicit authorization.
+
+All three semantic failures were guardrail BLOCK replacement responses classified with
+`omitted_required_boundary_or_helpful_action`. Nine BLOCK decisions reconciled to six
+semantic passes and three failures; every PASS (24) and WARN (3) decision semantically
+passed. Deterministic outcomes reconciled to 28 pass→pass, two fail→pass, one fail→fail,
+three N/A→pass, and two N/A→fail.
+
+`support-travel-notice-guidance` changed from judge fail during calibration to judge pass
+in the full measurement. This does not change the immutable accepted calibration or its
+10/12 agreement. It is a single observed repeat showing that the judge can vary, not a
+recalibration or an estimate of judge variance.
 
 ## Limitations and threats
 
@@ -178,7 +227,8 @@ until the owner accepts the inspected calibration evidence.
 - Prompt injection can target the judge; treating inputs as untrusted evidence is not a
   security guarantee.
 - A judge can share training, model-family, or provider biases with the system under test.
-- One judgement per case does not estimate repeat-trial variance.
+- One full-run judgement per case and one observed repeat on the calibration overlap do not
+  estimate repeat-trial variance.
 - Results are sensitive to rubric wording, prompt formatting, model snapshot, and provider
   behaviour.
 - Twelve challenge-weighted labels support disagreement inspection, not precise judge

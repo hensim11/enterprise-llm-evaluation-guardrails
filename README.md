@@ -7,13 +7,15 @@ This gives the evaluation work a realistic, risk-sensitive setting without imply
 access to real customer data, bank systems, or confidential policies. The framework's
 core contracts remain provider-agnostic.
 
-> **Current status:** Milestones M0, M1, and M2 and capability Batches A and B are complete.
+> **Current status:** Milestones M0, M1, M2, and M4 and capability Batches A, B, and C are
+> complete.
 > The repository retains both the measured baseline and the measured fresh-provider
 > guardrail comparison, with runtime decisions kept separate from deterministic evaluation.
-> Batch C's semantic implementation and all 12 final owner labels are ready. The labels
-> are explicitly recorded as partially unblinded because the original worksheet exposed
-> deterministic outcomes and selection reasons. No real judge measurement exists yet, so
-> Batch C and M4 remain incomplete.
+> Batch C's real 12-case calibration completed with 12/12 judgements, zero judge errors,
+> 10/12 human/judge agreement, and two explicitly reviewed disagreements. The owner accepted
+> the retained calibration while acknowledging that it is challenge-weighted and partially
+> unblinded. Its separately authorized full measurement completed 36/36 judgements with 33
+> pass, 3 fail, zero errors, and 100% coverage; the reviewed three-file result is retained.
 
 ## Why this project exists
 
@@ -134,14 +136,19 @@ Install `.[dev,openai]` only when preparing an authorized OpenAI run.
   owner-label evidence, explicit blinding conditions, and a future blinded worksheet; and
 - calibration and combined semantic reports that keep execution, deterministic, semantic,
   human, and runtime guardrail components visible without a composite score, plus a
-  provenance-bound disagreement-review acceptance gate.
+  provenance-bound disagreement-review eligibility gate; and
+- a separate provenance-bound owner-acceptance artefact that records acceptance without
+  changing the computed calibration report or its observed agreement; and
+- a retained full 36-case semantic measurement with complete provider usage and combined
+  deterministic, semantic, human-label, and runtime-guardrail case traces.
 
 Sections that describe the case schema, system interface, runner, raw/evaluated artefacts,
 guardrails, and reporting document implemented capability. Reviewed provider-backed
 evidence is retained separately for the four-file Batch A baseline and seven-file Batch B
-guardrail comparison.
+guardrail comparison, while Batch C retains its six-file accepted calibration and
+three-file full semantic measurement separately.
 
-## Semantic evaluation and calibration gate
+## Measured semantic evaluation and calibration
 
 Batch C evaluates retained raw outputs offline; it never supplies expected answers to the
 runtime system and does not use semantic outcomes for runtime enforcement. The rubric,
@@ -167,8 +174,32 @@ contains 8 owner passes and 4 owner failures in exact retained order; it records
 unblinding without altering the judgements. A draft worksheet cannot load as completed
 label evidence. Every future human/judge disagreement requires a classification and
 rationale in a validated review artefact before calibration is eligible for owner
-acceptance. A real judge run requires separate explicit model/spend authorization; no such
-run or semantic measurement is retained yet.
+acceptance. The authorized `gpt-5.5-2026-04-23` calibration produced 12/12 completed
+judgements, zero judge errors, and 10/12 agreement. The two disagreements were classified
+as `judge_failure` and `human_label_ambiguity`; the owner accepted the reviewed calibration
+through a separate provenance-bound acceptance artefact. See the
+[retained Batch C calibration evidence](evidence/calibration/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/).
+This challenge-weighted diagnostic result is not a representative estimate of judge
+accuracy or system performance.
+
+The separately authorized full semantic measurement applied the accepted judge
+configuration to all 36 retained Batch B outputs without rerunning the customer-support
+system. All 36 judgements completed: 33 pass and 3 fail, with zero errors, 100% judgement
+coverage, and complete retained usage of 16,266 input, 5,068 output, and 21,334 total
+tokens. All three failures were guardrail BLOCK responses judged to omit a required
+boundary or helpful action. Across all nine BLOCK decisions, six semantically passed and
+three failed; all 24 PASS and three WARN decisions semantically passed.
+
+The deterministic/semantic comparison retained 28 pass→pass cases, two deterministic
+fail→semantic-pass cases, one fail→fail case, three N/A→pass cases, and two N/A→fail cases.
+The two fail→pass cases were `unsupported-fraud-refund-guarantee` and
+`control-password-safety-tips`. `support-travel-notice-guidance` changed from judge fail in
+the accepted calibration to judge pass in the full measurement. The accepted calibration
+remains immutable at 10/12; this single observed repeat is evidence that judge outputs can
+vary, not a recalibration or a variance estimate. See the
+[retained full semantic evidence](evidence/semantic/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/).
+The 33/36 result and category slices describe one finite fictional benchmark run, not
+general model, safety, or judge accuracy.
 
 ## Measured Batch B guardrail comparison
 
@@ -444,10 +475,11 @@ Only fictional and synthetic benchmark data is sent.
 - Deterministic string checks have narrow literal coverage and cannot establish semantic
   correctness, safety, groundedness, privacy, or injection resistance.
 - Guardrails are narrow regex/phrase/digit-shape rules, not semantic understanding, a broad
-  PII catalogue, redaction, or a security guarantee. A model-based judge implementation
-  exists, and owner labels are retained, but no authorized real judge measurement or
-  accepted calibration has occurred.
-  No regex assertion, dashboard, or second provider is implemented.
+  PII catalogue, redaction, or a security guarantee. The accepted 12-case model-judge
+  calibration is challenge-weighted diagnostic evidence, not a representative accuracy or
+  safety estimate. The retained 36-case semantic measurement is one finite fictional
+  benchmark observation with small category samples, not a general accuracy or safety
+  estimate. No regex assertion, dashboard, or second provider is implemented.
 - The runner is sequential and has no application or SDK retries, resume support, or
   concurrency.
 - Run provenance supports case reconstruction and change detection but does not guarantee
@@ -461,10 +493,14 @@ Only fictional and synthetic benchmark data is sent.
   `schema_version` without changing v1 data.
 - Each retained run is one finite observation; together they do not support general
   robustness, accuracy, safety, privacy, or security claims.
-- Provider token usage was not retained, so actual run cost cannot be reconstructed from
-  the evidence.
+- Provider token usage was not retained for the Batch A/B system-under-test runs, so their
+  actual costs cannot be reconstructed. Usage is complete for the retained full semantic
+  judge run, but the repository does not infer currency cost from token counts.
 - The completed labels were partially unblinded to deterministic outcomes and selection
   reasons; this is disclosed and limits later agreement claims.
+- `support-travel-notice-guidance` produced different judge outcomes in calibration and the
+  full measurement. One repeated observation demonstrates possible nondeterminism but does
+  not quantify judge variance or prompt sensitivity.
 
 ## Working principles
 

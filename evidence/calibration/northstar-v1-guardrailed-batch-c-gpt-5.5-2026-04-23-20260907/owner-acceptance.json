@@ -1,0 +1,31 @@
+{
+  "schema_version": "1",
+  "status": "accepted",
+  "acceptance": {
+    "accepted_by": "owner",
+    "accepted_on": "2026-09-07",
+    "scope": "batch_c_semantic_calibration"
+  },
+  "source_run": {
+    "run_id": "northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906",
+    "dataset_fingerprint": "6e6c9f92825f2ab266521180968f3eeb6341df7e0acd448916dac670bed0d698"
+  },
+  "source_calibration_evidence": {
+    "sha256": "7a42b28e9fac3e73046956f6fb051038ef4ebf766287a669672d8f4b3f2b9b30"
+  },
+  "source_disagreement_review": {
+    "sha256": "74fba89e78bd1b6b28b5783742ffa8a4a6e1ec0bbd95942935aa9270f5a2bead"
+  },
+  "observed_result": {
+    "selected_cases": 12,
+    "agreement_numerator": 10,
+    "agreement_denominator": 12,
+    "judge_errors": 0
+  },
+  "limitations_acknowledged": {
+    "challenge_weighted": true,
+    "representative_sample": false,
+    "human_labels_partially_unblinded": true,
+    "judge_is_ground_truth": false
+  }
+}

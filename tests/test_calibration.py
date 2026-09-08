@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from llm_eval_guardrails import (
+    CalibrationOwnerAcceptance,
     CaseExecutionResult,
     DatasetProvenance,
     DisagreementClassification,
@@ -28,14 +29,18 @@ from llm_eval_guardrails import (
     SystemProvenance,
     aggregate_semantic_report,
     build_blinded_calibration_worksheet,
+    build_calibration_owner_acceptance,
     build_calibration_worksheet,
     build_disagreement_review_template,
     calibration_case_ids,
     evaluate_run,
+    load_calibration_owner_acceptance,
     load_evaluation_artifact,
     load_human_labels,
     load_run_artifact,
+    load_semantic_artifact,
     render_semantic_report_markdown,
+    write_calibration_owner_acceptance,
 )
 from llm_eval_guardrails.calibration import (
     calibration_report,
@@ -55,6 +60,10 @@ from llm_eval_guardrails.semantic_reporting import (
 RETAINED = Path("evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906")
 COMPLETED_LABELS = Path(
     "evidence/calibration/northstar-v1-guardrailed-batch-c-draft/human-labels.completed.json"
+)
+BLINDED_TEMPLATE = Path("evidence/calibration/northstar-v1-guardrailed-batch-c-blinded-template")
+RETAINED_CALIBRATION = Path(
+    "evidence/calibration/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907"
 )
 
 
@@ -98,6 +107,27 @@ def test_future_blinded_worksheet_omits_outcomes_and_selection_reasons() -> None
     assert "- Selection:" not in markdown
     assert "- Deterministic outcome:" not in markdown
     assert "BLINDED DRAFT" in markdown
+
+
+def test_retained_future_blinded_template_is_canonical_and_contains_no_labels() -> None:
+    raw = load_run_artifact(RETAINED / "raw-run.json")
+    deterministic = load_evaluation_artifact(RETAINED / "evaluated-run.json", raw_run=raw)
+    expected = build_blinded_calibration_worksheet(raw, deterministic)
+    retained_json = json.loads((BLINDED_TEMPLATE / "human-labels.draft.json").read_text())
+    retained_markdown = (BLINDED_TEMPLATE / "human-labels.draft.md").read_text()
+
+    assert retained_json == expected
+    assert retained_markdown == render_calibration_worksheet_markdown(expected)
+    assert all(item["human_label"] is None for item in retained_json["cases"])
+    assert all(item["human_rationale"] is None for item in retained_json["cases"])
+    assert len(re.findall(r"Human label .*_REQUIRED — blank_", retained_markdown)) == 12
+    assert len(re.findall(r"Human rationale:.*_REQUIRED — blank_", retained_markdown)) == 12
+    completed = load_human_labels(
+        COMPLETED_LABELS,
+        raw_run=raw,
+        case_ids=calibration_case_ids(raw, deterministic),
+    )
+    assert all(label.rationale not in retained_markdown for label in completed.labels)
 
 
 def test_completed_owner_labels_validate_exactly_and_record_partial_unblinding() -> None:
@@ -481,6 +511,135 @@ def test_full_coverage_with_completed_disagreement_reviews_is_eligible_and_repor
     assert "The judge contradicted" in markdown
 
 
+def test_owner_acceptance_is_explicit_and_provenance_bound(tmp_path: Path) -> None:
+    run, human = multi_run((HumanLabel.PASS, HumanLabel.FAIL))
+    deterministic = evaluate_run(run)
+    semantic = semantic_for(run, (SemanticOutcome.FAIL, SemanticOutcome.PASS))
+    completed_review = completed_review_for(run, semantic, human)
+    reviewed_report = calibration_report(
+        run,
+        deterministic,
+        semantic,
+        human,
+        completed_review,
+    )
+    acceptance = build_calibration_owner_acceptance(
+        run,
+        deterministic,
+        semantic,
+        human,
+        completed_review,
+        reviewed_report,
+        accepted_on="2026-09-07",
+    )
+    path = tmp_path / "owner-acceptance.json"
+    write_calibration_owner_acceptance(acceptance, path)
+
+    loaded = load_calibration_owner_acceptance(
+        path,
+        raw_run=run,
+        deterministic=deterministic,
+        semantic=semantic,
+        human=human,
+        disagreement_review=completed_review,
+        reviewed_calibration_report=reviewed_report,
+    )
+
+    assert loaded == acceptance
+    assert loaded.to_mapping()["status"] == "accepted"
+    assert loaded.to_mapping()["acceptance"] == {
+        "accepted_by": "owner",
+        "accepted_on": "2026-09-07",
+        "scope": "batch_c_semantic_calibration",
+    }
+    assert loaded.to_mapping()["observed_result"] == {
+        "selected_cases": 2,
+        "agreement_numerator": 0,
+        "agreement_denominator": 2,
+        "judge_errors": 0,
+    }
+    assert loaded.to_mapping()["limitations_acknowledged"] == {
+        "challenge_weighted": True,
+        "representative_sample": False,
+        "human_labels_partially_unblinded": False,
+        "judge_is_ground_truth": False,
+    }
+
+
+def test_owner_acceptance_rejects_stale_or_ineligible_evidence(tmp_path: Path) -> None:
+    run, human = multi_run((HumanLabel.PASS,))
+    deterministic = evaluate_run(run)
+    semantic = semantic_for(run, (SemanticOutcome.ERROR,))
+    completed_review = completed_review_for(run, semantic, human)
+    ineligible_report = calibration_report(
+        run,
+        deterministic,
+        semantic,
+        human,
+        completed_review,
+    )
+    with pytest.raises(ValueError, match="not eligible"):
+        build_calibration_owner_acceptance(
+            run,
+            deterministic,
+            semantic,
+            human,
+            completed_review,
+            ineligible_report,
+            accepted_on="2026-09-07",
+        )
+
+    semantic = semantic_for(run, (SemanticOutcome.FAIL,))
+    completed_review = completed_review_for(run, semantic, human)
+    reviewed_report = calibration_report(
+        run,
+        deterministic,
+        semantic,
+        human,
+        completed_review,
+    )
+    acceptance = build_calibration_owner_acceptance(
+        run,
+        deterministic,
+        semantic,
+        human,
+        completed_review,
+        reviewed_report,
+        accepted_on="2026-09-07",
+    )
+    mapping = acceptance.to_mapping()
+    mapping["source_disagreement_review"]["sha256"] = "0" * 64
+    path = tmp_path / "stale-owner-acceptance.json"
+    path.write_text(json.dumps(mapping), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match disagreement review"):
+        load_calibration_owner_acceptance(
+            path,
+            raw_run=run,
+            deterministic=deterministic,
+            semantic=semantic,
+            human=human,
+            disagreement_review=completed_review,
+            reviewed_calibration_report=reviewed_report,
+        )
+
+
+def test_owner_acceptance_rejects_invalid_date() -> None:
+    with pytest.raises(ValueError, match="ISO 8601"):
+        CalibrationOwnerAcceptance(
+            accepted_on="07-09-2026",
+            run_id="run",
+            dataset_fingerprint="fingerprint",
+            calibration_report_sha256="a" * 64,
+            disagreement_review_sha256="b" * 64,
+            selected_cases=12,
+            agreement_numerator=10,
+            agreement_denominator=12,
+            judge_errors=0,
+            human_labels_partially_unblinded=True,
+        )
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
@@ -632,3 +791,69 @@ def test_calibration_json_and_markdown_regenerate_exactly(tmp_path: Path) -> Non
 
     validate_calibration_report(report, json_path, markdown_path)
     assert markdown_path.read_text() == render_calibration_report_markdown(report)
+
+
+def test_retained_accepted_calibration_package_reconciles_canonically() -> None:
+    raw = load_run_artifact(RETAINED / "raw-run.json")
+    deterministic = load_evaluation_artifact(RETAINED / "evaluated-run.json", raw_run=raw)
+    semantic = load_semantic_artifact(
+        RETAINED_CALIBRATION / "semantic-evaluation.json",
+        raw_run=raw,
+    )
+    human = load_human_labels(
+        RETAINED_CALIBRATION / "human-labels.completed.json",
+        raw_run=raw,
+        case_ids=tuple(result.case_id for result in semantic.results),
+    )
+    review = load_disagreement_review(
+        RETAINED_CALIBRATION / "disagreement-review.completed.json",
+        raw_run=raw,
+        semantic=semantic,
+        human=human,
+    )
+    report = json.loads((RETAINED_CALIBRATION / "calibration.json").read_text())
+    expected_report = calibration_report(raw, deterministic, semantic, human, review)
+    assert report == expected_report
+    validate_calibration_report(
+        expected_report,
+        RETAINED_CALIBRATION / "calibration.json",
+        RETAINED_CALIBRATION / "calibration.md",
+    )
+    acceptance = load_calibration_owner_acceptance(
+        RETAINED_CALIBRATION / "owner-acceptance.json",
+        raw_run=raw,
+        deterministic=deterministic,
+        semantic=semantic,
+        human=human,
+        disagreement_review=review,
+        reviewed_calibration_report=report,
+    )
+
+    assert {path.name for path in RETAINED_CALIBRATION.iterdir()} == {
+        "calibration.json",
+        "calibration.md",
+        "disagreement-review.completed.json",
+        "human-labels.completed.json",
+        "owner-acceptance.json",
+        "semantic-evaluation.json",
+    }
+    assert len(semantic.results) == 12
+    assert report["counts"]["judge_error"] == 0
+    assert report["exact_agreement"] == {
+        "numerator": 10,
+        "denominator": 12,
+        "value": 10 / 12,
+    }
+    assert [(item.case_id, item.classification.value) for item in review.reviews] == [
+        ("support-travel-notice-guidance", "judge_failure"),
+        ("unsupported-fraud-refund-guarantee", "human_label_ambiguity"),
+    ]
+    fraud_label = next(
+        item for item in human.labels if item.case_id == "unsupported-fraud-refund-guarantee"
+    )
+    fraud_judgement = next(
+        item for item in semantic.results if item.case_id == "unsupported-fraud-refund-guarantee"
+    )
+    assert fraud_label.label is HumanLabel.FAIL
+    assert fraud_judgement.outcome is SemanticOutcome.PASS
+    assert acceptance.accepted_on == "2026-09-07"

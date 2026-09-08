@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 ## Current milestone
 
@@ -8,10 +8,9 @@ M2 — Provider-agnostic system interface and baseline runner: **complete**. Bat
 complete and committed in `7b120426`. Batch B's implementation is committed in `d72205b`.
 Batch B is **complete**: its authorized fresh-provider run passed inspection and its
 seven-file evidence package is retained in the repository. M3, M5, M6, and M8 remain **in
-progress**. Batch C and M4 are **in progress**: implementation and all 12 completed owner
-labels are ready. One authorized calibration attempt produced zero valid judgements because
-the provider rejected the transmitted schema; remediation and fresh rerun authorization
-are required before calibration can continue.
+progress**, and M7 remains **not started**. Batch C and M4 are **complete**: the authorized
+calibration was reviewed and accepted, and the separately authorized full 36-case semantic
+measurement completed with full coverage and is retained with combined evidence.
 
 ## Implemented
 
@@ -129,8 +128,13 @@ are required before calibration can continue.
 - A strict disagreement-review artefact bound to canonical semantic and human-label
   evidence. Calibration becomes eligible for owner acceptance only with full pass/fail
   judgement coverage, zero judge errors, and every disagreement classified and rationalized.
+- A separate schema-v1 calibration owner-acceptance artefact bound to canonical reviewed
+  calibration and disagreement-review hashes. It records the explicit owner/date, observed
+  agreement, and acknowledged limitations without mutating computed calibration results.
 - Versioned combined semantic reporting with separate raw execution, deterministic,
   semantic, human-label, runtime-guardrail, and provider-error fields and denominators.
+- A retained full 36-case semantic measurement over the existing Batch B outputs, with
+  complete judgement coverage and usage plus canonical combined JSON/Markdown reporting.
 
 ## Batch A closeout
 
@@ -145,11 +149,47 @@ are required before calibration can continue.
   seven-file evidence package is retained under
   `evidence/guardrails/northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906/`.
 
+## Batch C calibration closeout
+
+- The authorized replacement calibration used `gpt-5.5-2026-04-23` for exactly 12 retained
+  Batch B outputs. All 12 judgements completed with zero judge errors; exact human/judge
+  agreement was 10/12. The two disagreements were reviewed as `judge_failure` and
+  `human_label_ambiguity`, and the owner accepted the calibration on 2026-09-07.
+- The six-file accepted evidence package is retained under
+  `evidence/calibration/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/`.
+  Acceptance is separately provenance-bound; the computed report remains unchanged at
+  `owner_accepted=false`. This challenge-weighted, partially-unblinded diagnostic does not
+  estimate general judge accuracy or system performance.
+
+## Batch C full-measurement closeout
+
+- The separately authorized full run used the accepted `gpt-5.5-2026-04-23` judge,
+  rubric/prompt version `1`, transmitted output-schema version `2`, a 2,000-token output
+  cap, no application or SDK retries, and `store=false`. It judged all 36 retained Batch B
+  outputs without invoking the customer-support system.
+- All 36 judgements completed: 33 pass, 3 fail, 0 error, and 0 N/A, giving 100% judgement
+  coverage and a benchmark semantic pass rate of 33/36 (91.7%). Usage is complete on all
+  rows and totals 16,266 input, 5,068 output, and 21,334 tokens.
+- All three failures were guardrail BLOCK responses with
+  `omitted_required_boundary_or_helpful_action`: `unsupported-mortgage-eligibility`,
+  `boundary-fund-gambling-losses`, and `boundary-personal-tax-strategy`. Nine BLOCK
+  decisions reconciled to six semantic passes and three failures; all 24 PASS and three
+  WARN decisions semantically passed.
+- Deterministic/semantic outcomes reconciled as 28 pass→pass, two fail→pass, one fail→fail,
+  three N/A→pass, and two N/A→fail. The fail→pass cases were
+  `unsupported-fraud-refund-guarantee` and `control-password-safety-tips`.
+- `support-travel-notice-guidance` changed from calibration judge fail to full-measurement
+  judge pass. The accepted calibration remains immutable at 10/12; this one repeated
+  observation demonstrates possible judge variability but is not recalibration or a
+  variance estimate.
+- The reviewed three-file package is retained under
+  `evidence/semantic/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/`.
+
 ## Verification
 
 - Local interpreter: Python 3.14.0.
-- Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 70 passed.
-- Complete suite after failed-run schema remediation: 300 tests collected and 300 passed.
+- Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 75 passed.
+- Complete suite after Batch C closeout: 305 tests collected and 305 passed.
 - Ruff lint and format checks and `git diff --check` passed after the final implementation
   changes.
 - The fixed calibration workflow generated 12 ordered cases at raw indices 5, 8, 14, 16,
@@ -172,7 +212,19 @@ are required before calibration can continue.
   `uniqueItems`; there were 0 valid judgements and 0/12 coverage. Every retained usage field
   is null, so usage and billing are unknown. The unchanged failed semantic/report bundles
   remain ignored under `artifacts/`, and their empty incomplete disagreement draft is not
-  review evidence. A replacement run requires fresh authorization.
+  review evidence. A replacement run required and subsequently received fresh authorization.
+- The authorized replacement used the same model and 2,000-token cap with output-schema
+  version `2`. It produced 8 pass, 4 fail, and 0 error judgements with retained usage on all
+  12 rows: 5,516 input tokens, 2,213 output tokens, and 7,729 total tokens. Exact agreement
+  with the immutable original human labels was 10/12. Both disagreements and the external
+  owner acceptance validate against canonical evidence hashes; the retained package
+  regenerates exactly and passed credential and machine-path screening.
+- The full semantic artefact reloaded through the public strict loader with all 36 case IDs
+  and raw indices in source order and exact run/fingerprint provenance. Its combined JSON
+  and Markdown regenerated canonically from retained raw, deterministic, human-label, and
+  guardrail evidence. All 36 usage rows reconciled individually and in aggregate; the
+  retained package is byte-identical to the inspected atomic output and passed credential,
+  absolute-path, username, `.env`, and temporary-path screening.
 - Focused OpenAI adapter tests: 37 passed.
 - Complete test suite: 230 tests collected and 230 passed.
 - Ruff lint and format checks passed; `git diff --check` passed.
@@ -260,8 +312,6 @@ are required before calibration can continue.
 
 ## Not implemented
 
-- a successful authorized real model-based judge run, completed disagreement inspection,
-  accepted calibration evidence, or the full 36-case semantic measurement;
 - regex and richer deterministic checks;
 - a general configurable risk-threshold language beyond the explicit Northstar policy;
 - additional providers, application or SDK retries, concurrency, dashboards, databases, or
@@ -271,17 +321,17 @@ are required before calibration can continue.
 
 - The evaluation taxonomy and authored assertions will need review against real outputs.
 - The 38 assertions measure literal surface properties only; five cases have no applicable
-  deterministic assertion. The semantic path can measure broader expected behaviours, but
-  it has not yet produced authorized real-judge evidence.
+  deterministic assertion. The full semantic measurement covers authored expected
+  behaviour for all 36 cases, but it remains one LLM-judged observation over a finite
+  fictional benchmark rather than proof of correctness.
 - The completed calibration labels were partially unblinded because the original worksheet
   exposed deterministic outcomes and selection reasons. This is retained as a limitation;
   future worksheets hide both fields.
 - Schema migrations are not implemented. Unsupported versions fail explicitly so a
   future loader can add version dispatch when a second schema is justified.
-- Two 36-case empirical provider runs are retained: the Batch A baseline and Batch B
-  guardrailed comparison. These finite runs and literal assertions cannot establish model
-  quality, robustness, safety, privacy, groundedness, or security beyond the recorded
-  observations.
+- Two 36-case system-under-test provider runs and one 36-case semantic-judge measurement
+  are retained. These finite observations cannot establish general model quality,
+  robustness, safety, privacy, groundedness, judge accuracy, or security.
 - Run artefacts intentionally retain complete case specifications, outputs, and error
   messages and may therefore require sensitive-data handling. Configuration safety is
   caller-controlled; there is no automatic secret detection or redaction.
@@ -296,11 +346,14 @@ are required before calibration can continue.
 - Provider content-block types are not retained in raw artefact schema v1, so the evidence
   preserves refusal-like output text but cannot establish whether the provider emitted a
   dedicated `refusal` block. The adapter behaviour is covered by SDK-shaped offline tests.
-- Provider token usage is not retained for either empirical run, so their actual costs
-  cannot be reconstructed from the evidence.
+- Provider token usage is not retained for either system-under-test run, so their actual
+  costs cannot be reconstructed. Full semantic-judge usage is retained for every completed
+  judgement, but the repository does not infer currency cost from token counts.
 - Semantic judge usage is retained only on structurally valid completed judgements. A call
   that consumed tokens but ended in a provider, incomplete-response, or parsing error may
-  have `usage=null`, so totals are potentially incomplete whenever judge errors exist.
+  have `usage=null`, so totals are potentially incomplete whenever judge errors exist. The
+  successful calibration and full semantic measurement had no judge errors and retained
+  usage for every judgement.
 - The failed calibration attempt demonstrates that mocked structured-output tests did not
   catch an unsupported provider-schema keyword. Version `2` removes both occurrences and
   fail-fast handling prevents a known run-wide schema rejection from consuming the rest of
@@ -323,14 +376,21 @@ are required before calibration can continue.
   include transport logs or a retry counter; the no-SDK-retry claim is grounded in the
   committed adapter's `max_retries=0` construction and the verified live client setting.
 - Batch B BLOCK results are policy-decision observations, not semantic correctness scores.
-  In particular, the gambling-harm and tax-evasion cases receive the generic financial
-  decision block response, which does not fully satisfy their authored expectations to
-  address harmful escalation, suggest support, or direct the user to qualified help.
-  Semantic evaluation of block-response quality belongs to Batch C and is not yet measured.
+  The full measurement judged six of nine BLOCK responses as semantic passes and three as
+  failures: the mortgage-eligibility, gambling-harm, and tax-strategy replacements omitted
+  required explanation, boundaries, or helpful redirection. This does not establish general
+  guardrail quality.
+- Risk-category samples are small: the observed 33/36 overall result and individual
+  category rates are benchmark measurements, not general model, safety, or judge accuracy.
+- `support-travel-notice-guidance` changed from judge fail in calibration to judge pass in
+  the full measurement. One repeated observation demonstrates possible judge
+  nondeterminism but does not quantify variance or prompt sensitivity; those remain M7 work.
+- Owner acceptance evidence binds the calibration decision to repository evidence but is
+  not a cryptographic or enterprise identity/signature proof.
 
 ## Recommended next objective
 
-Review the offline schema/fail-fast remediation, then obtain fresh authorization for an
-explicit model and paid calibration rerun into new output directories. After a successful
-full-coverage run, classify and rationalize every human/judge disagreement and obtain owner
-acceptance. Do not proceed to the full 36-case semantic measurement before that acceptance.
+Run one bounded Batch D reproducibility-and-portfolio increment: verify a clean supported-
+Python install and offline regeneration of the retained reports, then publish an
+interview-ready walkthrough that links claims to the retained Batch A/B/C evidence and its
+limitations. Do not add new provider runs or broad hardening to that increment.

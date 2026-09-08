@@ -6,6 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import NoReturn
@@ -23,6 +24,7 @@ HUMAN_LABEL_SCHEMA_VERSION = "1"
 CALIBRATION_REPORT_SCHEMA_VERSION = "1"
 CALIBRATION_WORKSHEET_SCHEMA_VERSION = "1-draft"
 DISAGREEMENT_REVIEW_SCHEMA_VERSION = "1"
+CALIBRATION_OWNER_ACCEPTANCE_SCHEMA_VERSION = "1"
 
 PARTIAL_UNBLINDING_DISCLOSURES = (
     "worksheet_exposed_deterministic_outcomes",
@@ -700,6 +702,217 @@ class DisagreementReviewArtifact:
             )
 
 
+@dataclass(frozen=True, slots=True)
+class CalibrationOwnerAcceptance:
+    accepted_on: str
+    run_id: str
+    dataset_fingerprint: str
+    calibration_report_sha256: str
+    disagreement_review_sha256: str
+    selected_cases: int
+    agreement_numerator: int
+    agreement_denominator: int
+    judge_errors: int
+    human_labels_partially_unblinded: bool
+    schema_version: str = CALIBRATION_OWNER_ACCEPTANCE_SCHEMA_VERSION
+
+    def __post_init__(self) -> None:
+        if self.schema_version != CALIBRATION_OWNER_ACCEPTANCE_SCHEMA_VERSION:
+            raise ValueError("unsupported calibration owner-acceptance schema version")
+        for value, name in (
+            (self.accepted_on, "accepted_on"),
+            (self.run_id, "run_id"),
+            (self.dataset_fingerprint, "dataset_fingerprint"),
+            (self.calibration_report_sha256, "calibration_report_sha256"),
+            (self.disagreement_review_sha256, "disagreement_review_sha256"),
+        ):
+            _non_empty(value, name)
+        try:
+            parsed_date = date.fromisoformat(self.accepted_on)
+        except ValueError as error:
+            raise ValueError("accepted_on must be an ISO 8601 calendar date") from error
+        if parsed_date.isoformat() != self.accepted_on:
+            raise ValueError("accepted_on must be an ISO 8601 calendar date")
+        for value, name in (
+            (self.selected_cases, "selected_cases"),
+            (self.agreement_numerator, "agreement_numerator"),
+            (self.agreement_denominator, "agreement_denominator"),
+            (self.judge_errors, "judge_errors"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise TypeError(f"{name} must be an integer")
+            if value < 0:
+                raise ValueError(f"{name} must be non-negative")
+        if not isinstance(self.human_labels_partially_unblinded, bool):
+            raise TypeError("human_labels_partially_unblinded must be a boolean")
+
+    def to_mapping(self) -> dict[str, JsonValue]:
+        return {
+            "schema_version": self.schema_version,
+            "status": "accepted",
+            "acceptance": {
+                "accepted_by": "owner",
+                "accepted_on": self.accepted_on,
+                "scope": "batch_c_semantic_calibration",
+            },
+            "source_run": {
+                "run_id": self.run_id,
+                "dataset_fingerprint": self.dataset_fingerprint,
+            },
+            "source_calibration_evidence": {
+                "sha256": self.calibration_report_sha256,
+            },
+            "source_disagreement_review": {
+                "sha256": self.disagreement_review_sha256,
+            },
+            "observed_result": {
+                "selected_cases": self.selected_cases,
+                "agreement_numerator": self.agreement_numerator,
+                "agreement_denominator": self.agreement_denominator,
+                "judge_errors": self.judge_errors,
+            },
+            "limitations_acknowledged": {
+                "challenge_weighted": True,
+                "representative_sample": False,
+                "human_labels_partially_unblinded": self.human_labels_partially_unblinded,
+                "judge_is_ground_truth": False,
+            },
+        }
+
+    @classmethod
+    def from_mapping(cls, value: object) -> CalibrationOwnerAcceptance:
+        mapping = _mapping(value, "$")
+        _exact(
+            mapping,
+            {
+                "schema_version",
+                "status",
+                "acceptance",
+                "source_run",
+                "source_calibration_evidence",
+                "source_disagreement_review",
+                "observed_result",
+                "limitations_acknowledged",
+            },
+            "$",
+        )
+        if mapping["status"] != "accepted":
+            raise ValueError("calibration owner-acceptance status must be 'accepted'")
+        acceptance = _mapping(mapping["acceptance"], "acceptance")
+        _exact(acceptance, {"accepted_by", "accepted_on", "scope"}, "acceptance")
+        if acceptance["accepted_by"] != "owner":
+            raise ValueError("calibration acceptance must be recorded by the owner")
+        if acceptance["scope"] != "batch_c_semantic_calibration":
+            raise ValueError("calibration owner-acceptance scope is unsupported")
+        source = _mapping(mapping["source_run"], "source_run")
+        _exact(source, {"run_id", "dataset_fingerprint"}, "source_run")
+        calibration = _mapping(
+            mapping["source_calibration_evidence"], "source_calibration_evidence"
+        )
+        _exact(calibration, {"sha256"}, "source_calibration_evidence")
+        review = _mapping(mapping["source_disagreement_review"], "source_disagreement_review")
+        _exact(review, {"sha256"}, "source_disagreement_review")
+        observed = _mapping(mapping["observed_result"], "observed_result")
+        _exact(
+            observed,
+            {
+                "selected_cases",
+                "agreement_numerator",
+                "agreement_denominator",
+                "judge_errors",
+            },
+            "observed_result",
+        )
+        limitations = _mapping(mapping["limitations_acknowledged"], "limitations_acknowledged")
+        _exact(
+            limitations,
+            {
+                "challenge_weighted",
+                "representative_sample",
+                "human_labels_partially_unblinded",
+                "judge_is_ground_truth",
+            },
+            "limitations_acknowledged",
+        )
+        if (
+            limitations["challenge_weighted"] is not True
+            or limitations["representative_sample"] is not False
+            or not isinstance(limitations["human_labels_partially_unblinded"], bool)
+            or limitations["judge_is_ground_truth"] is not False
+        ):
+            raise ValueError("calibration owner-acceptance limitations are invalid")
+        return cls(
+            schema_version=_non_empty(mapping["schema_version"], "schema_version"),
+            accepted_on=_non_empty(acceptance["accepted_on"], "acceptance.accepted_on"),
+            run_id=_non_empty(source["run_id"], "source_run.run_id"),
+            dataset_fingerprint=_non_empty(
+                source["dataset_fingerprint"], "source_run.dataset_fingerprint"
+            ),
+            calibration_report_sha256=_non_empty(
+                calibration["sha256"], "source_calibration_evidence.sha256"
+            ),
+            disagreement_review_sha256=_non_empty(
+                review["sha256"], "source_disagreement_review.sha256"
+            ),
+            selected_cases=observed["selected_cases"],
+            agreement_numerator=observed["agreement_numerator"],
+            agreement_denominator=observed["agreement_denominator"],
+            judge_errors=observed["judge_errors"],
+            human_labels_partially_unblinded=limitations["human_labels_partially_unblinded"],
+        )
+
+    def validate_against(
+        self,
+        raw_run: RunArtifact,
+        deterministic: EvaluationArtifact,
+        semantic: SemanticEvaluationArtifact,
+        human: HumanLabelArtifact,
+        disagreement_review: DisagreementReviewArtifact,
+        reviewed_calibration_report: Mapping[str, object],
+    ) -> None:
+        expected_report = calibration_report(
+            raw_run,
+            deterministic,
+            semantic,
+            human,
+            disagreement_review,
+        )
+        if dict(reviewed_calibration_report) != expected_report:
+            raise ValueError("accepted calibration report does not match canonical evidence")
+        acceptance_gate = _mapping(expected_report["acceptance_gate"], "acceptance_gate")
+        if acceptance_gate["eligible_for_owner_acceptance"] is not True:
+            raise ValueError("calibration is not eligible for owner acceptance")
+        if acceptance_gate["owner_accepted"] is not False:
+            raise ValueError("computed calibration report must keep owner acceptance external")
+        counts = _mapping(expected_report["counts"], "counts")
+        exact_agreement = _mapping(expected_report["exact_agreement"], "exact_agreement")
+        if self.run_id != raw_run.run_id:
+            raise ValueError("calibration owner-acceptance run_id does not match raw run")
+        if self.dataset_fingerprint != raw_run.dataset.fingerprint:
+            raise ValueError("calibration owner-acceptance fingerprint does not match raw run")
+        if self.calibration_report_sha256 != _artifact_sha256(expected_report):
+            raise ValueError("calibration owner acceptance does not match reviewed report")
+        if self.disagreement_review_sha256 != _artifact_sha256(disagreement_review.to_mapping()):
+            raise ValueError("calibration owner acceptance does not match disagreement review")
+        expected_observed = (
+            counts["selected_cases"],
+            exact_agreement["numerator"],
+            exact_agreement["denominator"],
+            counts["judge_error"],
+        )
+        actual_observed = (
+            self.selected_cases,
+            self.agreement_numerator,
+            self.agreement_denominator,
+            self.judge_errors,
+        )
+        if actual_observed != expected_observed:
+            raise ValueError("calibration owner-acceptance observed result is invalid")
+        expected_partial_unblinding = human.blinding is LabelBlinding.PARTIALLY_UNBLINDED
+        if self.human_labels_partially_unblinded is not expected_partial_unblinding:
+            raise ValueError("calibration owner-acceptance blinding limitation is invalid")
+
+
 def build_disagreement_review_template(
     raw_run: RunArtifact,
     semantic: SemanticEvaluationArtifact,
@@ -914,6 +1127,84 @@ def calibration_report(
         },
         "case_trace": traces,
     }
+
+
+def build_calibration_owner_acceptance(
+    raw_run: RunArtifact,
+    deterministic: EvaluationArtifact,
+    semantic: SemanticEvaluationArtifact,
+    human: HumanLabelArtifact,
+    disagreement_review: DisagreementReviewArtifact,
+    reviewed_calibration_report: Mapping[str, object],
+    *,
+    accepted_on: str,
+) -> CalibrationOwnerAcceptance:
+    expected_report = calibration_report(
+        raw_run,
+        deterministic,
+        semantic,
+        human,
+        disagreement_review,
+    )
+    if dict(reviewed_calibration_report) != expected_report:
+        raise ValueError("accepted calibration report does not match canonical evidence")
+    counts = _mapping(expected_report["counts"], "counts")
+    exact_agreement = _mapping(expected_report["exact_agreement"], "exact_agreement")
+    artifact = CalibrationOwnerAcceptance(
+        accepted_on=accepted_on,
+        run_id=raw_run.run_id,
+        dataset_fingerprint=raw_run.dataset.fingerprint,
+        calibration_report_sha256=_artifact_sha256(expected_report),
+        disagreement_review_sha256=_artifact_sha256(disagreement_review.to_mapping()),
+        selected_cases=counts["selected_cases"],
+        agreement_numerator=exact_agreement["numerator"],
+        agreement_denominator=exact_agreement["denominator"],
+        judge_errors=counts["judge_error"],
+        human_labels_partially_unblinded=(human.blinding is LabelBlinding.PARTIALLY_UNBLINDED),
+    )
+    artifact.validate_against(
+        raw_run,
+        deterministic,
+        semantic,
+        human,
+        disagreement_review,
+        reviewed_calibration_report,
+    )
+    return artifact
+
+
+def write_calibration_owner_acceptance(
+    artifact: CalibrationOwnerAcceptance, path: str | Path
+) -> None:
+    if not isinstance(artifact, CalibrationOwnerAcceptance):
+        raise TypeError("artifact must be CalibrationOwnerAcceptance")
+    serialized = json.dumps(artifact.to_mapping(), ensure_ascii=False, allow_nan=False, indent=2)
+    with Path(path).open("x", encoding="utf-8", newline="\n") as output:
+        output.write(serialized + "\n")
+
+
+def load_calibration_owner_acceptance(
+    path: str | Path,
+    *,
+    raw_run: RunArtifact,
+    deterministic: EvaluationArtifact,
+    semantic: SemanticEvaluationArtifact,
+    human: HumanLabelArtifact,
+    disagreement_review: DisagreementReviewArtifact,
+    reviewed_calibration_report: Mapping[str, object],
+) -> CalibrationOwnerAcceptance:
+    with Path(path).open("r", encoding="utf-8") as source:
+        value = json.load(source, object_pairs_hook=_unique, parse_constant=_reject_number)
+    artifact = CalibrationOwnerAcceptance.from_mapping(value)
+    artifact.validate_against(
+        raw_run,
+        deterministic,
+        semantic,
+        human,
+        disagreement_review,
+        reviewed_calibration_report,
+    )
+    return artifact
 
 
 def render_calibration_report_markdown(report: Mapping[str, object]) -> str:
