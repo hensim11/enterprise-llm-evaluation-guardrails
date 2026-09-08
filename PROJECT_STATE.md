@@ -4,13 +4,15 @@ Last updated: 2026-09-08
 
 ## Current milestone
 
-M2 — Provider-agnostic system interface and baseline runner: **complete**. Batch A is
-complete and committed in `7b120426`. Batch B's implementation is committed in `d72205b`.
-Batch B is **complete**: its authorized fresh-provider run passed inspection and its
-seven-file evidence package is retained in the repository. M3, M5, M6, and M8 remain **in
-progress**, and M7 remains **not started**. Batch C and M4 are **complete**: the authorized
-calibration was reviewed and accepted, and the separately authorized full 36-case semantic
-measurement completed with full coverage and is retained with combined evidence.
+Batch D — reproducibility and portfolio release: **complete**. M0, M1, M2, M4, and M8 are
+complete. M3, M5, M6, and M7 remain **in progress**; the broader roadmap is not complete.
+Batch A's baseline, Batch B's fresh-provider guardrail comparison, and Batch C's accepted
+calibration and full semantic measurement remain retained and canonically verifiable.
+
+The repository is now **CV-ready**: a reviewer can clone it, install the dependency-free
+core, build and smoke-test the wheel outside the checkout, validate all retained evidence
+offline with one credential-free command, trace measured claims to cases, and use an
+interview-ready walkthrough. CV-ready does not mean production-ready or roadmap-complete.
 
 ## Implemented
 
@@ -135,6 +137,16 @@ measurement completed with full coverage and is retained with combined evidence.
   semantic, human-label, runtime-guardrail, and provider-error fields and denominators.
 - A retained full 36-case semantic measurement over the existing Batch B outputs, with
   complete judgement coverage and usage plus canonical combined JSON/Markdown reporting.
+- A repository-level offline verifier that validates every retained Batch A/B/C source
+  artefact and provenance join, regenerates all derivable JSON/Markdown in temporary
+  storage, byte-compares retained reports, and prints the key reconciled counts.
+- End-to-end verifier tests for success and a deliberately tampered report, without
+  modifying retained evidence.
+- Python 3.11–3.14 CI test coverage, Ruff lint/format gates, and a separate wheel build,
+  isolated install, and outside-checkout CLI smoke job.
+- A copy-pasteable reproducibility guide, evidence-linked GitHub landing page, and
+  interview-ready portfolio walkthrough with explicit observation/interpretation and
+  evaluation/enforcement boundaries.
 
 ## Batch A closeout
 
@@ -185,7 +197,40 @@ measurement completed with full coverage and is retained with combined evidence.
 - The reviewed three-file package is retained under
   `evidence/semantic/northstar-v1-guardrailed-batch-c-gpt-5.5-2026-04-23-20260907/`.
 
+## Batch D closeout
+
+- `python scripts/verify_retained_evidence.py` validated the retained Batch A four-file
+  baseline, Batch B seven-file guardrail comparison, Batch C six-file calibration, Batch C
+  three-file full semantic package, both calibration worksheets, and the original strict
+  human-label copy. It made no provider calls and used temporary generated output.
+- Canonical reconciliation reproduced 36/38 Batch A literal passes, 35/38 Batch B literal
+  passes, 24 PASS / 3 WARN / 9 BLOCK decisions, nine avoided invocations, 10/12 calibration
+  agreement with two reviewed disagreements and valid owner acceptance, and 33/36 semantic
+  passes with three failures and 36/36 judgement coverage.
+- The complete local suite passed under Python 3.11, 3.12, 3.13, and 3.14, and CI now
+  exercises the same matrix. A wheel built and installed into a clean temporary environment;
+  package import, version, optional-SDK absence, installed CLI help, and offline evidence
+  verification succeeded while the working directory was outside the checkout.
+- The README, reproducibility guide, portfolio walkthrough, roadmap, and state document now
+  agree that Batch D and M8 are complete; M3, M5, M6, and M7 remain in progress.
+
 ## Verification
+
+- Batch D complete suite: 310 tests collected and 310 passed under CPython 3.11.16,
+  3.12.14, 3.13.15, and 3.14.0, including successful full evidence verification and
+  rejection of copied/tampered reports and completed worksheets. The worksheet regressions
+  cover altered case input and altered observed-response text.
+- The offline verifier regenerated canonical deterministic, aggregate, comparison,
+  calibration, and semantic JSON/Markdown into temporary storage and byte-compared them
+  with all retained reports. Strict loaders validated raw, deterministic, guardrail,
+  semantic, human-label, disagreement-review, and owner-acceptance artefacts and joins.
+- `llm_eval_guardrails-0.1.0-py3-none-any.whl` built successfully. It installed in a fresh
+  Python 3.14 virtual environment and imported from outside the repository; the installed
+  CLI returned help, the OpenAI SDK was absent, and the repository verifier succeeded using
+  the installed package.
+- Ruff lint, Ruff format check, and `git diff --check` passed for the Batch D release.
+- Every tracked file under `evidence/` retained its pre-Batch-D SHA-256 digest; no empirical
+  evidence was modified.
 
 - Local interpreter: Python 3.14.0.
 - Batch C focused semantic, calibration, OpenAI-judge, reporting, and CLI tests: 75 passed.
@@ -260,8 +305,10 @@ measurement completed with full coverage and is retained with combined evidence.
   from 0.583229 to 3.077542 seconds with a 1.251037-second mean. The artefacts do not retain
   provider token usage, so actual token cost cannot be reconstructed from this evidence.
 - No type checker is configured.
-- Python 3.11 compatibility for the completed M2 code has not yet been executed locally or
-  confirmed by CI; the workflow is configured to run the suite under Python 3.11.
+- The earlier M2 closeout did not execute Python 3.11. Batch D later recorded the complete
+  current suite passing under temporary local CPython 3.11.16, 3.12.14, 3.13.15, and the
+  host's CPython 3.14.0. Hosted CI has not been observed because this branch has not been
+  committed or pushed; the workflow is configured to exercise the same version matrix.
 - Batch B focused tests demonstrate request-only detector inputs, input-block invocation
   avoidance with a counting fake, response replacement with deliberately leaking fake
   outputs, exact artefact joins, canonical tamper rejection, classification denominators,
@@ -390,7 +437,7 @@ measurement completed with full coverage and is retained with combined evidence.
 
 ## Recommended next objective
 
-Run one bounded Batch D reproducibility-and-portfolio increment: verify a clean supported-
-Python install and offline regeneration of the retained reports, then publish an
-interview-ready walkthrough that links claims to the retained Batch A/B/C evidence and its
-limitations. Do not add new provider runs or broad hardening to that increment.
+Take one bounded M7 hardening batch: repeat selected semantic judgements to measure judge
+variance and prompt sensitivity before introducing thresholds, then add tested
+resume/failure behaviour and explicit compatibility-boundary checks. Keep provider spend,
+sample design, and any threshold methodology behind a new batch contract and owner review.
