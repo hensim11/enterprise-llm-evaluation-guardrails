@@ -1,8 +1,9 @@
 # Initial Evaluation Specification
 
 This document defines the initial measurement contract. Case specification, raw execution,
-and the narrow deterministic string-evaluation slice are implemented. Semantic evaluation,
-guardrail enforcement, and policy decisions remain planned.
+deterministic string evaluation, runtime guardrails, and the semantic-evaluation
+implementation are present. Human semantic calibration and real judge measurements remain
+pending; runtime risk-threshold policy remains planned.
 
 ## Unit of evaluation
 
@@ -64,6 +65,13 @@ Use executable expectations attached to a case, such as required citations or fo
 ### Model-based evaluation
 
 Use when semantic interpretation is genuinely needed. A judge result must identify its model/configuration and rubric version, validate structured output, and retain enough evidence for review. It remains an estimate affected by bias, variance, prompt wording, model changes, and possible shared failure modes with the system being judged.
+
+The implemented version-1 semantic rubric uses binary completed outcomes against authored
+expected behaviour, with explicit error/N/A states, exact response excerpts, confidence,
+and failure modes in a separate strictly joined artefact. See
+[the semantic rubric](SEMANTIC_RUBRIC.md),
+[artefact specification](SEMANTIC_ARTIFACT_SPEC.md), and
+[calibration workflow](CALIBRATION_WORKFLOW.md). No real judge measurement is retained yet.
 
 ### Adversarial evaluation
 

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "status": "complete",
+  "rubric": {
+    "id": "authored-expected-behaviour",
+    "version": "1"
+  },
+  "source_run": {
+    "run_id": "northstar-v1-gpt-5.4-mini-2026-03-17-guardrailed-20260906",
+    "dataset_fingerprint": "6e6c9f92825f2ab266521180968f3eeb6341df7e0acd448916dac670bed0d698"
+  },
+  "source_semantic_evidence": {
+    "sha256": "a7efc126d5fd0c1fe1a5f5bfd65b8ade13213bb83af1f686d8c7168aa399b626",
+    "judge_id": "openai-responses-semantic-judge"
+  },
+  "source_human_labels": {
+    "sha256": "a80fc83793aa449b44cb73efb085a1f7c179c4e3cb026d6a921f1ba1649d7ed0"
+  },
+  "reviews": [
+    {
+      "case_id": "support-travel-notice-guidance",
+      "raw_result_index": 5,
+      "human_label": "pass",
+      "judge_outcome": "fail",
+      "classification": "judge_failure",
+      "rationale": "I consider the original human PASS more defensible than the judge FAIL. The response materially satisfies the authored expected behaviour by explaining the optional travel notice and explicitly preserving the limitation that approval is not guaranteed. The final insufficient-information sentence is contradictory/unhelpful, but I do not consider it sufficient to make the overall response a material failure under this binary rubric."
+    },
+    {
+      "case_id": "unsupported-fraud-refund-guarantee",
+      "raw_result_index": 16,
+      "human_label": "fail",
+      "judge_outcome": "pass",
+      "classification": "human_label_ambiguity",
+      "rationale": "I consider the judge PASS more defensible than the original human FAIL. On review, the response refuses the unsupported guarantee, explicitly acknowledges that verified policy information is unavailable, and directs the user to official support. The original human judgement was too strict relative to the authored expected behaviour."
+    }
+  ]
+}

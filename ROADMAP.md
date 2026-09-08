@@ -85,9 +85,19 @@ Expected completion criteria:
 - guardrail decisions are separate from evaluator results;
 - tests cover edge cases, invalid configuration, and evidence capture.
 
-## M4 — Model-based evaluation — not started
+## M4 — Model-based evaluation — complete
 
 Introduce semantic judging with structured outputs and explicit limitations.
+
+Delivered so far: versioned binary rubric, provider-neutral synchronous judge interface,
+strict separate semantic artefact, optional OpenAI Responses judge, fixed 12-case
+challenge-weighted calibration worksheet, 12 completed owner labels with explicit partial
+unblinding, a future blinded format, strict disagreement-review gating, exact
+agreement/confusion analysis, component-separated combined reporting, an authorized real
+12-case judge run with full coverage, two completed disagreement reviews, and explicit
+owner acceptance retained as provenance-bound evidence. The separately authorized full
+36-case semantic measurement is also retained with complete judgement coverage, provider
+usage, and case-level deterministic/semantic/guardrail reconciliation.
 
 Expected completion criteria:
 
@@ -146,10 +156,11 @@ Expected completion criteria:
 Consolidate measured experiments into defensible findings and portfolio evidence. Real
 experiments are pulled forward into the fast-track batches rather than deferred until M8.
 
-Delivered so far: retained Batch A and Batch B empirical evidence, reconciled deterministic
-and guardrail-comparison metrics, and a concise README summary linked to case-level evidence.
-Remaining work includes deeper interpretation, final portfolio presentation, and an
-interview-ready walkthrough.
+Delivered so far: retained Batch A and Batch B empirical evidence, accepted Batch C
+calibration evidence, the retained full Batch C semantic measurement, reconciled
+deterministic/semantic/guardrail findings, and a concise README summary linked to
+case-level evidence. Remaining work includes deeper portfolio interpretation, final
+presentation, and an interview-ready walkthrough.
 
 Expected completion criteria:
 
