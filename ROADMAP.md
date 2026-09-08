@@ -140,7 +140,14 @@ Expected completion criteria:
 - reports link aggregate metrics to case-level evidence;
 - machine-readable and human-readable reports are generated from the same run data.
 
-## M7 — Reproducibility, calibration, and hardening — not started
+## M7 — Reproducibility, calibration, and hardening — in progress
+
+Delivered so far: a credential-free repository verifier that strictly loads all retained
+Batch A/B/C evidence, regenerates canonical derived JSON/Markdown in temporary storage,
+and rejects drift; a clean-clone reproducibility guide; Python 3.11–3.14 CI coverage; and a
+wheel/install/CLI smoke test from outside the checkout. Remaining milestone work includes
+systematic judge variance and threshold sensitivity, tested resume/failure behaviour, and
+broader compatibility hardening.
 
 Strengthen experiment identity, reliability, and measurement confidence.
 
@@ -151,16 +158,17 @@ Expected completion criteria:
 - tests cover resume/failure behaviour and compatibility boundaries;
 - a reproducibility guide demonstrates a clean repeat run.
 
-## M8 — Results analysis and portfolio presentation — in progress
+## M8 — Results analysis and portfolio presentation — complete
 
 Consolidate measured experiments into defensible findings and portfolio evidence. Real
 experiments are pulled forward into the fast-track batches rather than deferred until M8.
 
-Delivered so far: retained Batch A and Batch B empirical evidence, accepted Batch C
-calibration evidence, the retained full Batch C semantic measurement, reconciled
-deterministic/semantic/guardrail findings, and a concise README summary linked to
-case-level evidence. Remaining work includes deeper portfolio interpretation, final
-presentation, and an interview-ready walkthrough.
+Delivered: retained Batch A and Batch B empirical evidence, accepted Batch C calibration
+evidence, the retained full Batch C semantic measurement, reconciled
+deterministic/semantic/guardrail findings, a scan-friendly evidence-linked README, and an
+interview-ready walkthrough with representative cases, observation/interpretation
+boundaries, decisions, trade-offs, limitations, a short demonstration, and truthful
+GitHub/CV wording.
 
 Expected completion criteria:
 
